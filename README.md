@@ -2,6 +2,8 @@
 
 This repository is a Jekyll-based personal homepage and blog for `cpuritan.cn`.
 
+For full Chinese deployment steps, see `DEPLOYMENT_CN.md`.
+
 ## Quick Publish Flow
 
 1. Create a public GitHub repository named `Cpuritan.github.io`.
