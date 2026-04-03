@@ -20,9 +20,10 @@ This repository is a Jekyll-based personal homepage and blog for `cpuritan.cn`.
 If you want to preview locally:
 
 1. Install Ruby and Bundler.
-2. Run:
+2. Install dependencies and run:
 
 ```bash
+bundle install
 bundle exec jekyll serve
 ```
 
