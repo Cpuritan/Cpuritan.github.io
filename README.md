@@ -46,3 +46,39 @@ title: "Article Title"
 date: 2026-04-03 20:00:00 +0800
 ---
 ```
+
+## LaTeX Auto-Publish Pipeline
+
+This repo supports automatic publishing from `latex/*.tex` to:
+
+- `_posts/latex/YYYY-MM-DD-slug.md` (web-readable blog post)
+- `assets/papers/slug.pdf` (PDF backup)
+
+### How to author a LaTeX source
+
+Create a file at `latex/<slug>.tex` and include commented front matter at the top:
+
+```tex
+% ---
+% title: "Post title"
+% date: "2026-04-03 20:30:00 +0800"
+% categories: [latex]
+% tags: [latex, math]
+% ---
+```
+
+Required fields: `title`, `date`  
+Optional fields: `categories`, `tags`
+
+### GitHub Actions behavior
+
+- Triggered on push to `main` when `latex/**`, `scripts/tex_pipeline.py`, or workflow file changes.
+- Runs `scripts/tex_pipeline.py` with `pandoc` + `tectonic`.
+- Commits generated outputs back to `main` with `[skip ci]`.
+
+### Required repository setting
+
+In GitHub repository settings:
+
+- `Settings -> Actions -> General -> Workflow permissions`
+- Enable `Read and write permissions` so the workflow can commit generated files.

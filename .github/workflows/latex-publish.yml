@@ -1,0 +1,58 @@
+name: latex-publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "latex/**"
+      - "scripts/tex_pipeline.py"
+      - ".github/workflows/latex-publish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Tectonic
+        run: cargo install --locked tectonic
+
+      - name: Generate LaTeX outputs
+        run: python scripts/tex_pipeline.py
+
+      - name: Commit generated files
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(latex): auto-generate posts and pdf [skip ci]"
+          git push

@@ -1,0 +1,32 @@
+% ---
+% title: "First LaTeX Post"
+% date: "2026-04-03 20:30:00 +0800"
+% categories: [latex]
+% tags: [latex, math, workflow]
+% ---
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+
+\begin{document}
+
+\section{Hello from LaTeX}
+
+This page is authored in \LaTeX{} and auto-published as a blog post.
+
+Inline math works as expected: $a^2 + b^2 = c^2$.
+
+Displayed math is preserved:
+\[
+\min_{x \in \mathbb{R}} \left(x - 3\right)^2
+\]
+
+\subsection{Why this pipeline}
+
+\begin{itemize}
+  \item Keep \texttt{.tex} as the single source of truth.
+  \item Publish an HTML-readable page in the same Jekyll blog flow.
+  \item Generate a PDF backup for archival and sharing.
+\end{itemize}
+
+\end{document}
