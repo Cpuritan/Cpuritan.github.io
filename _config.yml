@@ -1,0 +1,20 @@
+title: Cpuritan
+description: Cpuritan 的个人主页与博客
+url: "https://cpuritan.cn"
+baseurl: ""
+lang: zh-CN
+timezone: Asia/Shanghai
+theme: minima
+
+author:
+  name: Cpuritan
+  email: contact@cpuritan.cn
+
+markdown: kramdown
+highlighter: rouge
+
+show_excerpts: true
+permalink: /:categories/:year/:month/:day/:title/
+
+plugins:
+  - jekyll-feed
