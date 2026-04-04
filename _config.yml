@@ -5,6 +5,8 @@ baseurl: ""
 lang: zh-CN
 timezone: Asia/Shanghai
 theme: minima
+exclude:
+  - content/
 
 author:
   name: Cpuritan

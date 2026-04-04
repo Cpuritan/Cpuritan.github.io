@@ -1,13 +1,13 @@
-name: latex-publish
+name: blog-publish
 
 on:
   push:
     branches:
       - main
     paths:
-      - "latex/**"
-      - "scripts/tex_pipeline.py"
-      - ".github/workflows/latex-publish.yml"
+      - "content/blog/**"
+      - "scripts/blog_pipeline.py"
+      - ".github/workflows/blog-publish.yml"
   workflow_dispatch:
 
 permissions:
@@ -29,20 +29,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Setup Pandoc
-        uses: r-lib/actions/setup-pandoc@v2
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust builds
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install Tectonic
-        run: cargo install --locked tectonic
-
-      - name: Generate LaTeX outputs
-        run: python scripts/tex_pipeline.py
+      - name: Generate blog posts
+        run: python scripts/blog_pipeline.py
 
       - name: Commit generated files
         run: |
@@ -55,5 +43,5 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore(latex): auto-generate posts and pdf [skip ci]"
+          git commit -m "chore(blog): auto-generate posts [skip ci]"
           git push

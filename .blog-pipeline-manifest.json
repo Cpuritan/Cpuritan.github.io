@@ -1,0 +1,25 @@
+{
+  "entries": {
+    "hello.md": {
+      "pipeline_version": "1",
+      "post": "_posts/2026-04-03-hello.md",
+      "source_sha256": "a733643fda62518f8de8645d5b110efc3ca90a32ec91db5c0205247bd11f6dc1"
+    },
+    "reading-analytics-for-an-online-retailer-demand-forecasting-and-price-optimization.md": {
+      "pipeline_version": "1",
+      "post": "_posts/2024-11-03-reading-analytics-for-an-online-retailer-demand-forecasting-and-price-optimization.md",
+      "source_sha256": "98d666217f44a41240e37e862fc820b690edd55917735b8665476bc9414615a0"
+    },
+    "reading-robust-vehicle-pre-allocation-with-uncertain-covariates.md": {
+      "pipeline_version": "1",
+      "post": "_posts/2024-10-15-reading-robust-vehicle-pre-allocation-with-uncertain-covariates.md",
+      "source_sha256": "85161f99b70775d8244dd8c618cb6f458630ea2f7bcba48f357f771d66d3c84b"
+    },
+    "reading-smart-predict-then-optimize.md": {
+      "pipeline_version": "1",
+      "post": "_posts/2024-11-15-reading-smart-predict-then-optimize.md",
+      "source_sha256": "03af29be40cbe9a4441e425102372f4e3077d13020bfc314295f3d8f839e799c"
+    }
+  },
+  "pipeline_version": 1
+}

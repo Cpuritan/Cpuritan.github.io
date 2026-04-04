@@ -4,3 +4,5 @@ _site/
 .bundle/
 vendor/
 desktop.ini
+__pycache__/
+*.pyc

@@ -31,21 +31,40 @@ bundle exec jekyll serve
 
 Then open `http://127.0.0.1:4000`.
 
-## Posting New Articles
+## Writing Blog Posts
 
-Create files in `_posts/` using this format:
+Do not write new posts directly in `_posts/`.
 
-`YYYY-MM-DD-title.md`
+Instead, create source files in `content/blog/` with any stable filename you want:
+
+`content/blog/my-note.md`
 
 Minimal front matter:
 
 ```yaml
 ---
-layout: post
 title: "Article Title"
 date: 2026-04-03 20:00:00 +0800
 ---
 ```
+
+Optional fields:
+
+- `categories: [blog, reading]`
+- `tags: [optimization, pricing]`
+
+On every push to `main`, the blog pipeline will:
+
+- generate a Jekyll-compatible file in `_posts/YYYY-MM-DD-slug.md`
+- preserve the public URL slug from the source filename
+- keep `_posts/` in sync when you rename or delete a source file
+
+Notes:
+
+- `_posts/` is now a generated directory for Markdown blog posts
+- `content/blog/` is the authoring source of truth
+- blog math is rendered with MathJax, and the pipeline normalizes `$...$` / `$$...$$` where possible
+- for complex formulas, prefer `\(...\)` and `\[...\]` in source files to avoid Markdown delimiter edge cases
 
 ## LaTeX Auto-Publish Pipeline
 

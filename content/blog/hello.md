@@ -1,12 +1,7 @@
 ---
-layout: post
 title: "你好，世界：我的个人博客上线了"
-date: "2026-04-03 14:30:00 +0800"
-categories: ["blog"]
-blog_source: "/content/blog/hello.md"
+date: 2026-04-03 14:30:00 +0800
 ---
-
-<!-- AUTO-GENERATED: blog-pipeline source=content/blog/hello.md -->
 
 这是我在 `cpuritan.cn` 发布的第一篇文章。
 
