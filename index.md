@@ -18,10 +18,11 @@ title: Cpuritan
 - Email: [bqf_cpuritan@163.com](mailto:bqf_cpuritan@163.com)
 - ORCID: [0009-0007-9880-8989](https://orcid.org/0009-0007-9880-8989)
 
-### 项目展示
+### 研究成果
 
-- Flexibility Supply Chains：围绕柔性供应链的实验与论文工程
-- Personal Knowledge Base：结构化沉淀学习与研究过程
+- Online Retail Pricing under a Smart Predict-then-Optimize Framework with Competitive Cluster Mining
+- Sparse Spare-Parts Network Design: An Unbalanced Optimal
+Transport Framework for Joint Location-Inventory-Allocation
 
 ### 最新文章
 

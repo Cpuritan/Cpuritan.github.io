@@ -1,7 +1,18 @@
-### Background
+---
+layout: post
+title: "Robust Vehicle Pre-Allocation with Uncertain Covariates"
+date: 2024-10-15 14:30:00 +0800
+categories: [blog]
+tags: [hello, github-pages, jekyll]
+---
+
+
+## Background
+
 针对新加坡一家出租车运营商，如何分配闲置车辆以满足未来需求的不确定性？在新加坡这样的城市环境中，出租车运营商需要有效地管理其车辆资源，以应对高峰时段的需求波动和空间分布不均的问题。出租车时空分布不均，在市中心等繁忙区域常出现供大于求，而城市周边区域则会面临供应不足的现象。与此同时，出租车需求还受到其他不确定因素的影响，例如天气等。论文旨在通过分布鲁棒优化方法，结合协变量信息（如天气）来构建一个能够处理需求不确定性的车辆预分配模型，从而提高运营商的运营效率和盈利能力。
 
 ## Characters
+
 $S_i$ 供应节点 $i$ 的闲置车辆数量，$i \in [N]$
 $\tilde{z} = (\tilde{z_{j}})$ 需求向量，$j \in [M]$
 $\tilde{v} \in \mathbb{R^I}$ 与需求相关的不确定协变量向量
@@ -9,9 +20,10 @@ $r_j$ 分配车辆到需求节点 $j$ 成功拉客时运营商的收益
 $w_{ij}$ 分配车辆从供应节点 $i$ 到需求节点 $j$  的成本
 $x_{ij}$ 分配车辆从供应节点 $i$ 到需求节点 $j$  的数量
 需求和协变量联合分布$(\tilde{z},\tilde{v}) \in \mathbb{R^M} \times \mathbb{R^I}$
-总成本$\sum\limits_{j\in[M]} \sum\limits_{i\in[N]} w_{ij} x_{ij}$ ；总收益$\sum\limits_{j\in[M]} r_{j} (\tilde{z_{j}}  \wedge \sum\limits_{i\in[N]} x_{ij})$ 
+总成本$\sum\limits_{j\in[M]} \sum\limits_{i\in[N]} w_{ij} x_{ij}$ ；总收益$\sum\limits_{j\in[M]} r_{j} (\tilde{z_{j}}  \wedge \sum\limits_{i\in[N]} x_{ij})$
 
 ## SO Model
+
 如果对于运营商而言 $(\tilde{z},\tilde{v})$ 的**联合分布信息是明确已知**的，即$\mathbb{Q} \in \mathcal{P_{0}(\mathbb{R^{M}} \times \mathbb{R^{I}}})$ ，则车辆分配问题可以指定为以下随机运输问题：
 $$
 \begin{align}
@@ -119,14 +131,14 @@ $$
 $$
 进而场景 $l$ 下需求的均值$\mu_{l}$和方差$\sigma_{j l}^{2}$可以估计如下：
 $$
-\hat{\mu}_{l}=\frac{1}{|\mathcal{K}_{l}|} \sum\limits_{t\in\mathcal{K}_l}\hat{z}_{t}\quad\quad\sigma_{j l}^{2}=\sum\limits_{t\in\mathcal{K}_l}(\hat{z}_{jt}-\hat{\mu}_{jl})^{2} 
+\hat{\mu}_{l}=\frac{1}{|\mathcal{K}_{l}|} \sum\limits_{t\in\mathcal{K}_l}\hat{z}_{t}\quad\quad\sigma_{j l}^{2}=\sum\limits_{t\in\mathcal{K}_l}(\hat{z}_{jt}-\hat{\mu}_{jl})^{2}
 $$
 上述的估计仍满足上述Proposition 1
 虽然回归树并非是唯一划分场景的方法，还存在其他的无监督聚类方法，但是我们发现其他的无监督聚类方法并未利用协变量。我们在以下例子中展示了在某些情况下，利用协变量信息，**回归树**可以提供比仅基于因变量进行聚类的无监督聚类方法**更准确**的情景分类。
 
 例 2 考虑一个一维的情况，有$(\tilde{z} , \tilde{v})$服从分布$\mathcal{Q}(\tilde{v}=1)=1/2$$\mathcal{Q}(\tilde{v}=2)=1/2$对于需求$\tilde{z}$有如下表所示的概率：
 $$
-\begin{array}{c|c|c} 
+\begin{array}{c|c|c}
 \hline
 \tilde{z} & \tilde{v} & \mathbb{Q}(\tilde{z} \mid \tilde{v}) \\
 \hline \hline
@@ -141,6 +153,7 @@ $$
 $$
 假设我们从这个分布中获得了6个样本 $(\tilde{z} , \tilde{v})$：(1, 1), (1, 1), (3, 1), (2, 2), (4, 2), 和 (4, 2)。对于 L = 2，使用回归树，{(1, 1), (1, 1), (3, 1)} 被识别为情景 1，概率为 0.5，而 {(2, 2), (4, 2), (4, 2)} 被识别为情景 2，概率也为 0.5。相比之下，使用忽略协变量信息的 K-means 聚类，只利用 $\tilde{z}$ 的数据点，即 1, 1, 2, 3, 4 , 4。因此，在 K-means 聚类中当 K = 2 时，{1, 1, 2} 被聚类为情景 1，概率为 0.5，而 {3, 4, 4} 被聚类为情景 2，概率也为 0.5。
 回归树方法还具有良好的可解释性，展示了分区与协变量之间的联系。这种可解释性还赋予了场景化的模糊集在结合预测信息方面的灵活性，例如，协变量落入场景 $l$ 的概率。
+
 ```
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import plot_tree
@@ -183,7 +196,9 @@ for i in range(4):
 axes[3].set_ylim(10.5, 0.5)
 plt.show()
 ```
+
 基于由场景均值和方差定义的模糊集𝐹，分布鲁棒模型的实现如下
+
 ```
 from rsome import dro                         # import the dro module
 from rsome import square                      # import the element-wise square function
@@ -223,11 +238,9 @@ objval = model.get()                          # get the optimal objective value
 x_sol = x.get()                               # get the optimal solution
 ```
 
-##  解决方案
+## 解决方案
 
 ### 线性规则近似
-
-
 
 $$
 \begin{aligned}
@@ -241,5 +254,5 @@ $$
 & x_{i j} \in \mathbb{R}_{+}, \boldsymbol{\alpha} \in \mathbb{R}^L, \boldsymbol{\delta}_l \in \mathbb{R}^M, \boldsymbol{\gamma}_l \in \mathbb{R}_{+}^M, \forall l \in[L]
 \end{aligned}
 $$
-#Robust-Optimization 
-#Uncertain-Optimize
+# Robust-Optimization
+# Uncertain-Optimize
