@@ -30,6 +30,20 @@ npm run build
 
 ## Content authoring
 
+### Home and Research pages (Markdown content)
+
+Home and Research now use an Astro shell + Markdown body pattern:
+
+- Home body: `src/markdown/home.md`
+- Research body: `src/markdown/research.md`
+
+Page wrappers:
+
+- `src/pages/index.astro`
+- `src/pages/research/index.astro`
+
+This means you can edit most page text in Markdown while keeping Astro layout and metadata control.
+
 ### Legacy `_posts` workflow (recommended for your current files)
 
 You can write directly in:

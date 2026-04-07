@@ -41,16 +41,16 @@ const {
   <body>
     <header class="site-header">
       <nav class="site-nav">
-        <a href="/" class={Astro.url.pathname === "/" ? "active" : ""}>Home</a>
-        <a
-          href="/blog/"
-          class={Astro.url.pathname.startsWith("/blog/") ? "active" : ""}
-          >Blog</a
-        >
+        <a href="/" class={Astro.url.pathname === "/" ? "active" : ""}>Home 🏠</a>
         <a
           href="/research/"
           class={Astro.url.pathname.startsWith("/research/") ? "active" : ""}
-          >RESEARCH</a
+          >RESEARCH 🔬</a
+        >
+        <a
+          href="/blog/"
+          class={Astro.url.pathname.startsWith("/blog/") ? "active" : ""}
+          >Blog ✍️</a
         >
       </nav>
     </header>
