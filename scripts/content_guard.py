@@ -14,6 +14,7 @@ BLOG_DIR = ROOT / "src" / "content" / "blog"
 
 FENCED_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~", re.MULTILINE)
 INLINE_CODE_RE = re.compile(r"`[^`\r\n]+`")
+STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>([\s\S]*?)</style>", re.IGNORECASE)
 
 BROKEN_PATTERNS: Tuple[Tuple[str, re.Pattern[str]], ...] = (
     (
@@ -73,6 +74,15 @@ def inspect_svg(path: Path, text: str) -> List[str]:
             ET.fromstring(block)
         except ET.ParseError as exc:
             issues.append(f"{path}: svg#{idx} parse error ({exc})")
+            continue
+
+        for style_idx, style_match in enumerate(STYLE_BLOCK_RE.finditer(block), start=1):
+            style_body = style_match.group(1)
+            if re.search(r"\n[ \t]*\n", style_body):
+                issues.append(
+                    f"{path}: svg#{idx} style#{style_idx} contains blank lines; "
+                    "collapse style content to avoid markdown html-block truncation"
+                )
     return issues
 
 
