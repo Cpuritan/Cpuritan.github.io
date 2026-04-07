@@ -76,6 +76,40 @@ def inspect_svg(path: Path, text: str) -> List[str]:
     return issues
 
 
+def inspect_svg_block_boundaries(path: Path, text: str) -> List[str]:
+    issues: List[str] = []
+    lines = text.splitlines()
+    in_fence = False
+    fence_marker = ""
+
+    for idx, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence = True
+                fence_marker = marker
+            elif marker == fence_marker:
+                in_fence = False
+                fence_marker = ""
+            continue
+
+        if in_fence:
+            continue
+
+        match = re.search(r"<svg\b", line, flags=re.IGNORECASE)
+        if not match:
+            continue
+
+        # Keep SVG as a raw HTML block so markdown parsing will not auto-close it.
+        if line[: match.start()].strip():
+            issues.append(f"{path}: line {idx + 1}: <svg> must start on its own line")
+        if idx > 0 and lines[idx - 1].strip():
+            issues.append(f"{path}: line {idx + 1}: missing blank line before <svg>")
+
+    return issues
+
+
 def inspect_mojibake(path: Path, text: str) -> List[str]:
     issues: List[str] = []
     if not CJK_RE.search(text):
@@ -119,6 +153,7 @@ def inspect_file(path: Path) -> List[str]:
     text = read_utf8_strict(path)
     scan_text = strip_code_blocks(text)
     issues: List[str] = []
+    issues.extend(inspect_svg_block_boundaries(path, text))
     issues.extend(inspect_patterns(path, scan_text))
     issues.extend(inspect_mojibake(path, scan_text))
     issues.extend(inspect_svg(path, scan_text))

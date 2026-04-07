@@ -10,6 +10,7 @@ date: 2024-10-08 15:55:00 +0800
 ## Oriented
 
 主要挑战：首次曝光商品的 需求预测 和 定价；
+
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 503.67693778252027 222.0499242146809" width="503.67693778252027" height="222.0499242146809">
   <!-- svg-source:excalidraw -->
   
@@ -117,6 +118,7 @@ $$
 >若$LB\ge z^{*}_{LP_{k_{l+1}}}$或  $l=K$迭代停止；否则继续；
 
 简单理解：
+
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 553.9231235981763 257.5069574402319" width="553.9231235981763" height="257.5069574402319">
   <!-- svg-source:excalidraw -->
   
