@@ -1,6 +1,5 @@
 ---
 layout: home
-title: Cpuritan
 ---
 
 ## Qifeng Bao
@@ -14,7 +13,7 @@ title: Cpuritan
 
 #### 联系方式
 
-- GitHub: [github.com/Cpuritan](https://github.com/Cpuritan)
+- GitHub: [GitHub](https://github.com/Cpuritan)
 - Email: [bqf_cpuritan@163.com](mailto:bqf_cpuritan@163.com)
 - ORCID: [0009-0007-9880-8989](https://orcid.org/0009-0007-9880-8989)
 

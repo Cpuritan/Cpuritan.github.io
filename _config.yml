@@ -7,6 +7,7 @@ timezone: Asia/Shanghai
 theme: minima
 exclude:
   - content/
+  - DEPLOYMENT_CN.md
 
 author:
   name: Cpuritan
@@ -15,7 +16,8 @@ author:
 markdown: kramdown
 highlighter: rouge
 
-show_excerpts: true
+show_excerpts: false
+header_pages: []
 permalink: /:categories/:year/:month/:day/:title/
 
 plugins:
