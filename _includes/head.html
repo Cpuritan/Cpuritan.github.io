@@ -10,7 +10,9 @@
       tex: {
         inlineMath: [["$", "$"], ["\\(", "\\)"]],
         displayMath: [["$$", "$$"], ["\\[", "\\]"]],
-        processEscapes: true
+        processEscapes: true,
+        processEnvironments: true,
+        packages: {"[+]": ["ams", "noerrors", "noundefined"]}
       },
       options: {
         skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
