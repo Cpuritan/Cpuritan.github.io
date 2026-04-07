@@ -1,30 +1,46 @@
-name: blog-validate
+name: blog-sync
 
 on:
   push:
     branches:
       - main
     paths:
-      - "src/content/blog/**"
+      - "_posts/**"
+      - "public/assets/posts/**"
       - "scripts/blog_pipeline.py"
       - ".github/workflows/blog-publish.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  validate:
+  sync-and-validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Validate Astro blog content
+      - name: Sync legacy posts into Astro content
         run: python scripts/blog_pipeline.py
+
+      - name: Commit generated files
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No synchronized changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(blog): sync _posts to astro content"
+          git push

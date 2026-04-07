@@ -30,6 +30,26 @@ npm run build
 
 ## Content authoring
 
+### Legacy `_posts` workflow (recommended for your current files)
+
+You can write directly in:
+
+`_posts/**/*.md`
+
+This includes nested folders such as:
+
+- `_posts/crew schedule/crew scheduling CTS2025.md`
+- `_posts/crew schedule/attachments/*`
+
+`scripts/blog_pipeline.py` will automatically:
+
+- sync markdown files into `src/content/blog/*.md`
+- auto-fill minimal front matter (`title`, `date`) if missing
+- convert Obsidian image embeds like `![[attachments/x.png|600]]`
+- copy local assets to `public/assets/posts/<slug>/...`
+
+The `blog-sync` GitHub Action runs this on every push that changes `_posts/**`.
+
 ### Markdown blog posts
 
 Write posts in:
@@ -77,7 +97,7 @@ Pipeline outputs:
 - `.github/workflows/deploy-astro.yml`
   - builds Astro and deploys `dist/` to GitHub Pages.
 - `.github/workflows/blog-publish.yml`
-  - validates `src/content/blog` front matter and slug uniqueness.
+  - syncs `_posts/**` (and attachments) into Astro content, then validates and auto-commits generated files.
 - `.github/workflows/latex-publish.yml`
   - converts LaTeX to Astro content + PDF and commits generated artifacts.
 
