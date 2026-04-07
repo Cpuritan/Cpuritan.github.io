@@ -1,0 +1,133 @@
+@font-face {
+  font-family: "Comic Shanns";
+  src: url("/fonts/ComicShannsMonoNerdFont-Regular.otf") format("opentype");
+  font-display: swap;
+}
+
+:root {
+  --bg: #ffffff;
+  --text: #161616;
+  --muted: #6b7280;
+  --line: #d9d9d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: "Comic Shanns", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.65;
+}
+
+a {
+  color: inherit;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  z-index: 20;
+}
+
+.site-nav {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0.9rem 1rem;
+  display: flex;
+  gap: 1.2rem;
+}
+
+.site-nav a {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.site-nav a.active,
+.site-nav a:hover {
+  color: var(--text);
+}
+
+.page-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2.2rem 1rem 4rem;
+}
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.home-intro {
+  max-width: 720px;
+}
+
+.home-intro ul {
+  padding-left: 1.2rem;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+.blog-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  background: #fff;
+}
+
+.blog-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.blog-card h2 a {
+  text-decoration: none;
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.tags {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.post-page {
+  max-width: 760px;
+}
+
+.post-header {
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.9rem;
+}
+
+.post-content img,
+.post-content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.post-content pre {
+  overflow-x: auto;
+}

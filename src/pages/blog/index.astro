@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+const buildBlogUrl = (slug: string, date: Date): string => {
+  const year = String(date.getFullYear());
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `/blog/${year}/${month}/${day}/${slug}/`;
+};
+---
+
+<BaseLayout title="Blog | Cpuritan" description="Blog posts">
+  <section>
+    <h1>Blog</h1>
+    <div class="blog-grid">
+      {
+        posts.map((post) => (
+          <article class="blog-card">
+            <h2>
+              <a href={buildBlogUrl(post.slug, post.data.date)}>{post.data.title}</a>
+            </h2>
+            <p class="meta">{post.data.date.toISOString().slice(0, 10)}</p>
+            {post.data.tags && post.data.tags.length > 0 ? (
+              <p class="tags">{post.data.tags.join(" / ")}</p>
+            ) : null}
+          </article>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

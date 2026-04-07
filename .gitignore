@@ -6,3 +6,7 @@ vendor/
 desktop.ini
 __pycache__/
 *.pyc
+node_modules/
+dist/
+.astro/
+.npm-cache/

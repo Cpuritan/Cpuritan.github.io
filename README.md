@@ -1,43 +1,40 @@
-# Cpuritan Personal Site
+# Cpuritan Personal Site (Astro)
 
-This repository is a Jekyll-based personal homepage and blog for `cpuritan.cn`.
+This repository now uses Astro for `cpuritan.cn` with a minimal white theme:
 
-For full Chinese deployment steps, see `DEPLOYMENT_CN.md`.
+- top navigation: `Home / Blog`
+- `Home` page: personal profile only
+- `Blog` page: post list (card style)
+- post URLs: `/blog/YYYY/MM/DD/slug/` (legacy-compatible)
 
-## Quick Publish Flow
+## Stack
 
-1. Create a public GitHub repository named `Cpuritan.github.io`.
-2. Push this project to the `main` branch of that repository.
-3. In GitHub repository settings, enable Pages from `main` / root.
-4. Keep `CNAME` as `cpuritan.cn`.
-5. Configure DNS in Alibaba Cloud:
-   - `A` `@` -> `185.199.108.153`
-   - `A` `@` -> `185.199.109.153`
-   - `A` `@` -> `185.199.110.153`
-   - `A` `@` -> `185.199.111.153`
-   - `CNAME` `www` -> `Cpuritan.github.io`
+- Astro static site
+- Comic Shanns (self-hosted in `public/fonts/`)
+- MathJax for markdown math rendering
+- GitHub Pages via GitHub Actions
 
-## Local Preview (optional)
+## Local development
 
-If you want to preview locally:
+Requirements:
 
-1. Install Ruby and Bundler.
-2. Install dependencies and run:
+- Node.js `>=18.17.1` (recommended `20.x`)
+
+Commands:
 
 ```bash
-bundle install
-bundle exec jekyll serve
+npm install
+npm run dev
+npm run build
 ```
 
-Then open `http://127.0.0.1:4000`.
+## Content authoring
 
-## Writing Blog Posts
+### Markdown blog posts
 
-Do not write new posts directly in `_posts/`.
+Write posts in:
 
-Instead, create source files in `content/blog/` with any stable filename you want:
-
-`content/blog/my-note.md`
+`src/content/blog/<slug>.md`
 
 Minimal front matter:
 
@@ -48,56 +45,46 @@ date: 2026-04-03 20:00:00 +0800
 ---
 ```
 
-Optional fields:
+Optional:
 
-- `categories: [blog, reading]`
 - `tags: [optimization, pricing]`
+- `categories: [blog, reading]`
 
-On every push to `main`, the blog pipeline will:
+### LaTeX auto-publish
 
-- generate a Jekyll-compatible file in `_posts/YYYY-MM-DD-slug.md`
-- preserve the public URL slug from the source filename
-- keep `_posts/` in sync when you rename or delete a source file
+Write LaTeX sources in:
 
-Notes:
+`latex/<slug>.tex`
 
-- `_posts/` is now a generated directory for Markdown blog posts
-- `content/blog/` is the authoring source of truth
-- blog math is rendered with MathJax, and the pipeline normalizes `$...$` / `$$...$$` where possible
-- for complex formulas, prefer `\(...\)` and `\[...\]` in source files to avoid Markdown delimiter edge cases
-
-## LaTeX Auto-Publish Pipeline
-
-This repo supports automatic publishing from `latex/*.tex` to:
-
-- `_posts/latex/YYYY-MM-DD-slug.md` (web-readable blog post)
-- `assets/papers/slug.pdf` (PDF backup)
-
-### How to author a LaTeX source
-
-Create a file at `latex/<slug>.tex` and include commented front matter at the top:
+Front matter must be commented at top:
 
 ```tex
 % ---
 % title: "Post title"
 % date: "2026-04-03 20:30:00 +0800"
-% categories: [latex]
 % tags: [latex, math]
+% categories: [latex]
 % ---
 ```
 
-Required fields: `title`, `date`  
-Optional fields: `categories`, `tags`
+Pipeline outputs:
 
-### GitHub Actions behavior
+- `src/content/blog/<slug>.md` (auto-generated)
+- `public/assets/papers/<slug>.pdf`
 
-- Triggered on push to `main` when `latex/**`, `scripts/tex_pipeline.py`, or workflow file changes.
-- Runs `scripts/tex_pipeline.py` with `pandoc` + `tectonic`.
-- Commits generated outputs back to `main` with `[skip ci]`.
+## Workflows
 
-### Required repository setting
+- `.github/workflows/deploy-astro.yml`
+  - builds Astro and deploys `dist/` to GitHub Pages.
+- `.github/workflows/blog-publish.yml`
+  - validates `src/content/blog` front matter and slug uniqueness.
+- `.github/workflows/latex-publish.yml`
+  - converts LaTeX to Astro content + PDF and commits generated artifacts.
 
-In GitHub repository settings:
+## Domain
 
-- `Settings -> Actions -> General -> Workflow permissions`
-- Enable `Read and write permissions` so the workflow can commit generated files.
+`public/CNAME` is set to:
+
+`cpuritan.cn`
+
+This preserves custom domain behavior on GitHub Pages.

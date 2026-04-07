@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
-"""Convert LaTeX sources into Jekyll blog posts and PDF artifacts.
+﻿#!/usr/bin/env python3
+"""Convert LaTeX sources into Astro blog content and PDF backups.
 
 Source files:
   latex/<slug>.tex
 
 Generated files:
-  _posts/latex/YYYY-MM-DD-<slug>.md
-  assets/papers/<slug>.pdf
+  src/content/blog/<slug>.md
+  public/assets/papers/<slug>.pdf
 """
 
 from __future__ import annotations
@@ -28,9 +28,9 @@ MARKER = "<!-- AUTO-GENERATED: latex-pipeline"
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "latex"
-POSTS_DIR = ROOT / "_posts" / "latex"
-PDF_DIR = ROOT / "assets" / "papers"
-MANIFEST_PATH = PDF_DIR / ".latex-pipeline-manifest.json"
+CONTENT_DIR = ROOT / "src" / "content" / "blog"
+PDF_DIR = ROOT / "public" / "assets" / "papers"
+MANIFEST_PATH = ROOT / ".latex-astro-pipeline-manifest.json"
 
 
 class PipelineError(RuntimeError):
@@ -42,7 +42,7 @@ class SourceDocument:
     slug: str
     source_path: Path
     metadata: Dict[str, object]
-    post_path: Path
+    content_path: Path
     pdf_path: Path
     source_sha256: str
 
@@ -72,7 +72,7 @@ def parse_quoted(value: str) -> str:
     inner = value[1:-1]
     inner = inner.replace(r"\\", "\\")
     inner = inner.replace(r"\'", "'")
-    inner = inner.replace(r"\"", '"')
+    inner = inner.replace(r'\"', '"')
     return inner
 
 
@@ -145,9 +145,7 @@ def parse_metadata(path: Path) -> Dict[str, object]:
 
     opening = comment_content(lines[index])
     if opening is None or opening.strip() != "---":
-        raise PipelineError(
-            f"{path} must start with commented front matter: % ---"
-        )
+        raise PipelineError(f"{path} must start with commented front matter: % ---")
     index += 1
 
     metadata_lines: List[str] = []
@@ -184,7 +182,6 @@ def parse_metadata(path: Path) -> Dict[str, object]:
         if field not in metadata or str(metadata[field]).strip() == "":
             raise PipelineError(f"{path} missing required field: {field}")
 
-    # Validate date early to prevent partial generation.
     parse_date(str(metadata["date"]))
     return metadata
 
@@ -232,9 +229,7 @@ def pandoc_to_markdown(source: Path) -> str:
         check=False,
     )
     if proc.returncode != 0:
-        raise PipelineError(
-            f"Pandoc failed for {source}:\n{proc.stderr.strip()}"
-        )
+        raise PipelineError(f"Pandoc failed for {source}:\n{proc.stderr.strip()}")
     body = proc.stdout.strip()
     return body + "\n" if body else ""
 
@@ -242,12 +237,7 @@ def pandoc_to_markdown(source: Path) -> str:
 def build_pdf(source: Path, target_pdf: Path) -> bool:
     with tempfile.TemporaryDirectory(prefix="tex-pipeline-") as tmp_dir:
         tmp_path = Path(tmp_dir)
-        cmd = [
-            "tectonic",
-            "--outdir",
-            rel_posix(tmp_path),
-            rel_posix(source),
-        ]
+        cmd = ["tectonic", "--outdir", rel_posix(tmp_path), rel_posix(source)]
         proc = subprocess.run(
             cmd,
             cwd=ROOT,
@@ -256,9 +246,7 @@ def build_pdf(source: Path, target_pdf: Path) -> bool:
             check=False,
         )
         if proc.returncode != 0:
-            raise PipelineError(
-                f"Tectonic failed for {source}:\n{proc.stderr.strip()}"
-            )
+            raise PipelineError(f"Tectonic failed for {source}:\n{proc.stderr.strip()}")
         pdf_name = source.with_suffix(".pdf").name
         generated_pdf = tmp_path / pdf_name
         if not generated_pdf.exists():
@@ -270,7 +258,7 @@ def build_pdf(source: Path, target_pdf: Path) -> bool:
         return True
 
 
-def compose_post_markdown(doc: SourceDocument, markdown_body: str) -> str:
+def compose_content_markdown(doc: SourceDocument, markdown_body: str) -> str:
     title = str(doc.metadata["title"])
     date_str = str(doc.metadata["date"])
     categories = normalize_tag_list(doc.metadata, "categories")
@@ -278,7 +266,6 @@ def compose_post_markdown(doc: SourceDocument, markdown_body: str) -> str:
 
     lines: List[str] = [
         "---",
-        "layout: post",
         f"title: {yaml_quote(title)}",
         f"date: {yaml_quote(date_str)}",
     ]
@@ -289,7 +276,7 @@ def compose_post_markdown(doc: SourceDocument, markdown_body: str) -> str:
     lines.extend(
         [
             f"latex_source: {yaml_quote('/latex/' + doc.source_path.name)}",
-            f"latex_pdf: {yaml_quote('/' + rel_posix(doc.pdf_path.relative_to(ROOT)))}",
+            f"latex_pdf: {yaml_quote('/assets/papers/' + doc.slug + '.pdf')}",
             "---",
             "",
             f"{MARKER} source=latex/{doc.slug}.tex -->",
@@ -311,6 +298,12 @@ def write_text_if_changed(path: Path, content: str) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     return True
+
+
+def is_generated_content(path: Path) -> bool:
+    if not path.exists():
+        return False
+    return MARKER in read_text(path)
 
 
 def remove_file_if_exists(path: Path) -> bool:
@@ -337,10 +330,7 @@ def load_manifest() -> Dict[str, Dict[str, str]]:
 
 
 def save_manifest(entries: Dict[str, Dict[str, str]]) -> bool:
-    payload = {
-        "pipeline_version": PIPELINE_VERSION,
-        "entries": entries,
-    }
+    payload = {"pipeline_version": PIPELINE_VERSION, "entries": entries}
     content = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     return write_text_if_changed(MANIFEST_PATH, content)
 
@@ -348,34 +338,30 @@ def save_manifest(entries: Dict[str, Dict[str, str]]) -> bool:
 def build_document_plan(source_path: Path) -> SourceDocument:
     metadata = parse_metadata(source_path)
     slug = source_path.stem
-    date_prefix = parse_date(str(metadata["date"])).date().isoformat()
-    post_name = f"{date_prefix}-{slug}.md"
-    post_path = POSTS_DIR / post_name
+    content_path = CONTENT_DIR / f"{slug}.md"
     pdf_path = PDF_DIR / f"{slug}.pdf"
     return SourceDocument(
         slug=slug,
         source_path=source_path,
         metadata=metadata,
-        post_path=post_path,
+        content_path=content_path,
         pdf_path=pdf_path,
         source_sha256=source_sha256(source_path),
     )
 
 
-def should_skip_generation(
-    doc: SourceDocument, old_entry: Dict[str, str] | None
-) -> bool:
+def should_skip_generation(doc: SourceDocument, old_entry: Dict[str, str] | None) -> bool:
     if not old_entry:
         return False
     if old_entry.get("pipeline_version") != str(PIPELINE_VERSION):
         return False
     if old_entry.get("source_sha256") != doc.source_sha256:
         return False
-    old_post = ROOT / old_entry.get("post", "")
+    old_content = ROOT / old_entry.get("content", "")
     old_pdf = ROOT / old_entry.get("pdf", "")
-    if old_post != doc.post_path or old_pdf != doc.pdf_path:
+    if old_content != doc.content_path or old_pdf != doc.pdf_path:
         return False
-    return old_post.exists() and old_pdf.exists()
+    return old_content.exists() and old_pdf.exists()
 
 
 def normalize_old_entries(raw_entries: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
@@ -385,7 +371,7 @@ def normalize_old_entries(raw_entries: Dict[str, Dict[str, str]]) -> Dict[str, D
             continue
         normalized[slug] = {
             "source_sha256": str(entry.get("source_sha256", "")),
-            "post": str(entry.get("post", "")),
+            "content": str(entry.get("content", "")),
             "pdf": str(entry.get("pdf", "")),
             "pipeline_version": str(entry.get("pipeline_version", "")),
         }
@@ -402,7 +388,7 @@ def run_pipeline() -> Tuple[int, int, int]:
     require_command("pandoc")
     require_command("tectonic")
 
-    POSTS_DIR.mkdir(parents=True, exist_ok=True)
+    CONTENT_DIR.mkdir(parents=True, exist_ok=True)
     PDF_DIR.mkdir(parents=True, exist_ok=True)
 
     old_entries = normalize_old_entries(load_manifest())
@@ -415,33 +401,39 @@ def run_pipeline() -> Tuple[int, int, int]:
         doc = build_document_plan(source)
         old_entry = old_entries.get(doc.slug)
 
+        if not old_entry and doc.content_path.exists() and not is_generated_content(
+            doc.content_path
+        ):
+            raise PipelineError(
+                f"Refusing to overwrite manually maintained content file: {doc.content_path}"
+            )
+
         if not should_skip_generation(doc, old_entry):
             markdown_body = pandoc_to_markdown(source)
             if build_pdf(source, doc.pdf_path):
                 changed_files += 1
-            post_content = compose_post_markdown(doc, markdown_body)
-            if write_text_if_changed(doc.post_path, post_content):
+            content_text = compose_content_markdown(doc, markdown_body)
+            if write_text_if_changed(doc.content_path, content_text):
                 changed_files += 1
 
         new_entries[doc.slug] = {
             "source_sha256": doc.source_sha256,
-            "post": rel_posix(doc.post_path.relative_to(ROOT)),
+            "content": rel_posix(doc.content_path.relative_to(ROOT)),
             "pdf": rel_posix(doc.pdf_path.relative_to(ROOT)),
             "pipeline_version": str(PIPELINE_VERSION),
         }
 
-    # Remove stale files for deleted/renamed sources.
     for slug, old_entry in old_entries.items():
-        old_post = ROOT / old_entry.get("post", "")
+        old_content = ROOT / old_entry.get("content", "")
         old_pdf = ROOT / old_entry.get("pdf", "")
         if slug not in new_entries:
-            if remove_file_if_exists(old_post):
+            if remove_file_if_exists(old_content):
                 changed_files += 1
             if remove_file_if_exists(old_pdf):
                 changed_files += 1
             continue
-        new_post = ROOT / new_entries[slug]["post"]
-        if old_post != new_post and remove_file_if_exists(old_post):
+        new_content = ROOT / new_entries[slug]["content"]
+        if old_content != new_content and remove_file_if_exists(old_content):
             changed_files += 1
 
     if save_manifest(new_entries):
@@ -452,14 +444,14 @@ def run_pipeline() -> Tuple[int, int, int]:
 
 def main() -> int:
     try:
-        sources_scanned, posts_expected, changed = run_pipeline()
+        sources_scanned, contents_expected, changed = run_pipeline()
     except PipelineError as exc:
         print(f"[latex-pipeline] ERROR: {exc}", file=sys.stderr)
         return 1
 
     print(
         "[latex-pipeline] Completed: "
-        f"sources={sources_scanned}, expected_posts={posts_expected}, changed={changed}"
+        f"sources={sources_scanned}, expected_contents={contents_expected}, changed={changed}"
     )
     return 0
 
