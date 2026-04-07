@@ -1,5 +1,5 @@
 ---
-title: "reading analytics for an online retailer demand forecasting and price optimization"
+title: "Reading---Analytics for an online retailer demand forecasting and price optimization"
 date: 2024-11-03 00:00:00 +0800
 ---
 

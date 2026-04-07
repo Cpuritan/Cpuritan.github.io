@@ -1,5 +1,5 @@
 ---
-title: "reading smart predict then optimize"
+title: "Reading---Smart Predict then Optimize"
 date: 2024-11-15 00:00:00 +0800
 ---
 
@@ -32,6 +32,7 @@ P(c):\quad z^{*}(c):= \min\limits_{w}c^Tw\\
 s.t.\quad w\in S
 \end{aligned}
 $$
+
 1. 训练数据形式$(x_{1},c_{1}),\cdots,(x_{n},c_{n})$
 2. 成本向量$c$ 预测模型$f$ 使得$\hat{c}:=f(x)$并定义一个类$\cal{H}$有$f \in \cal{H}$
 3. 定义损失函数$\cal{l}(\hat{c},c)$衡量成本向量预测值与真实成本向量的误差。
@@ -68,11 +69,13 @@ $$
 $$
 
 根据$PO$范式，$SPOloss$计算流程：
+
 - 给定成本向量预测值$\hat{c}$；
 - 求解$P(\hat{c})$得到决策$w^{*}(\hat{c})$；
 - 计算$SPO loss:=c^{T}w^{*}(\hat{c})-z^{*}(c)$；
 
 但由于$SPO$损失函数在计算过程中，可能的非凸性和不连续性，提出$SPO+$损失函数作为$SPO$的凸替代，$SPO+$的几点性质如下：
+
 - $\ell_{\mathrm{SPO}}(\hat{c}, c) \leq \ell_{\mathrm{SPO}+}(\hat{c}, c)$；
 - $\ell_{\mathrm{SPO}+}(\hat{c}, c)$是关于 $\hat{c}$ 的凸函数；
 - 给定$\hat{c}$，$\ell_{\mathrm{SPO}+}(\cdot)$ 在$\hat{c}$处的次梯度为 $2\left(w^*(c)-\right.$ $\left.w^*(2 \hat{c}-c)\right) \in \partial \ell_{\mathrm{SPO}+}(\hat{c}, c)$
