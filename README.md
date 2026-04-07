@@ -1,17 +1,18 @@
 # Cpuritan Personal Site (Astro)
 
-This repository now uses Astro for `cpuritan.cn` with a minimal white theme:
+This repository uses Astro for `cpuritan.cn` with a minimal white layout:
 
-- top navigation: `Home / Blog`
-- `Home` page: personal profile only
-- `Blog` page: post list (card style)
+- top navigation: `Home / Blog / Research`
+- `Home`: profile content
+- `Blog`: post list and article pages
+- `Research`: research overview
 - post URLs: `/blog/YYYY/MM/DD/slug/` (legacy-compatible)
 
 ## Stack
 
 - Astro static site
 - Comic Shanns (self-hosted in `public/fonts/`)
-- MathJax for markdown math rendering
+- MathJax (`remark-math + rehype-mathjax`)
 - GitHub Pages via GitHub Actions
 
 ## Local development
@@ -30,43 +31,16 @@ npm run build
 
 ## Content authoring
 
-### Home and Research pages (Markdown content)
-
-Home and Research now use an Astro shell + Markdown body pattern:
+### Home and Research pages
 
 - Home body: `src/markdown/home.md`
 - Research body: `src/markdown/research.md`
+- Page wrappers:
+`src/pages/index.astro`, `src/pages/research/index.astro`
 
-Page wrappers:
+### Blog posts (single source of truth)
 
-- `src/pages/index.astro`
-- `src/pages/research/index.astro`
-
-This means you can edit most page text in Markdown while keeping Astro layout and metadata control.
-
-### Legacy `_posts` workflow (recommended for your current files)
-
-You can write directly in:
-
-`_posts/**/*.md`
-
-This includes nested folders such as:
-
-- `_posts/crew schedule/crew scheduling CTS2025.md`
-- `_posts/crew schedule/attachments/*`
-
-`scripts/blog_pipeline.py` will automatically:
-
-- sync markdown files into `src/content/blog/*.md`
-- auto-fill minimal front matter (`title`, `date`) if missing
-- convert Obsidian image embeds like `![[attachments/x.png|600]]`
-- copy local assets to `public/assets/posts/<slug>/...`
-
-The `blog-sync` GitHub Action runs this on every push that changes `_posts/**`.
-
-### Markdown blog posts
-
-Write posts in:
+Write posts only in:
 
 `src/content/blog/<slug>.md`
 
@@ -84,34 +58,56 @@ Optional:
 - `tags: [optimization, pricing]`
 - `categories: [blog, reading]`
 
+### Blog assets
+
+For local images used by blog posts, keep assets under:
+
+`public/assets/posts/<slug>/...`
+
 ### LaTeX auto-publish
 
 Write LaTeX sources in:
 
 `latex/<slug>.tex`
 
-Front matter must be commented at top:
-
-```tex
-% ---
-% title: "Post title"
-% date: "2026-04-03 20:30:00 +0800"
-% tags: [latex, math]
-% categories: [latex]
-% ---
-```
-
 Pipeline outputs:
 
-- `src/content/blog/<slug>.md` (auto-generated)
+- `src/content/blog/<slug>.md`
 - `public/assets/papers/<slug>.pdf`
+
+## Content guard and CI
+
+- `scripts/content_guard.py` validates:
+  - UTF-8 decode (strict)
+  - malformed SVG blocks
+  - legacy bad marker: `AUTO-GENERATED: scripts/blog_pipeline.py`
+  - common encoding-corruption signals
+- `.github/workflows/blog-publish.yml` runs guard on blog/content changes.
+- `.github/workflows/deploy-astro.yml` runs guard before `npm run build`.
+
+## Windows encoding safety
+
+Use UTF-8 explicitly when writing files from scripts/terminal.
+
+PowerShell examples:
+
+```powershell
+# Read as UTF-8
+Get-Content -LiteralPath .\src\content\blog\post.md -Raw -Encoding UTF8
+
+# Write UTF-8 without BOM
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText((Resolve-Path .\src\content\blog\post.md), $content, $utf8NoBom)
+```
+
+Avoid writing markdown with default encoding commands that do not specify UTF-8.
 
 ## Workflows
 
 - `.github/workflows/deploy-astro.yml`
-  - builds Astro and deploys `dist/` to GitHub Pages.
+  - validates content, builds Astro, deploys `dist/` to GitHub Pages.
 - `.github/workflows/blog-publish.yml`
-  - syncs `_posts/**` (and attachments) into Astro content, then validates and auto-commits generated files.
+  - validates blog markdown and assets integrity.
 - `.github/workflows/latex-publish.yml`
   - converts LaTeX to Astro content + PDF and commits generated artifacts.
 
@@ -120,5 +116,3 @@ Pipeline outputs:
 `public/CNAME` is set to:
 
 `cpuritan.cn`
-
-This preserves custom domain behavior on GitHub Pages.
