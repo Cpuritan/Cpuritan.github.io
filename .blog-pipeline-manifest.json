@@ -3,22 +3,22 @@
     "hello.md": {
       "pipeline_version": "5",
       "post": "_posts/2026-04-03-hello.md",
-      "source_sha256": "ee5fa8d2cc146ec0b9ed11dbe42a0d9e27101a3489c0f35bc571bca6c76591ae"
+      "source_sha256": "a733643fda62518f8de8645d5b110efc3ca90a32ec91db5c0205247bd11f6dc1"
     },
     "reading-analytics-for-an-online-retailer-demand-forecasting-and-price-optimization.md": {
       "pipeline_version": "5",
       "post": "_posts/2024-11-03-reading-analytics-for-an-online-retailer-demand-forecasting-and-price-optimization.md",
-      "source_sha256": "8d04fba5a1c07a3ac3dd69bfd65eb446e87a34687174715361b29e578bab648b"
+      "source_sha256": "98d666217f44a41240e37e862fc820b690edd55917735b8665476bc9414615a0"
     },
     "reading-robust-vehicle-pre-allocation-with-uncertain-covariates.md": {
       "pipeline_version": "5",
       "post": "_posts/2024-10-15-reading-robust-vehicle-pre-allocation-with-uncertain-covariates.md",
-      "source_sha256": "344159ac6981c6d0877c7c1ea67dce30cd21aad59b72d225cdf824bb2d024d2f"
+      "source_sha256": "85161f99b70775d8244dd8c618cb6f458630ea2f7bcba48f357f771d66d3c84b"
     },
     "reading-smart-predict-then-optimize.md": {
       "pipeline_version": "5",
       "post": "_posts/2024-11-15-reading-smart-predict-then-optimize.md",
-      "source_sha256": "69f53254df56504e6f37f5aa814949692a6250d07d76cfa544dea2ccc6e88de8"
+      "source_sha256": "03af29be40cbe9a4441e425102372f4e3077d13020bfc314295f3d8f839e799c"
     }
   },
   "pipeline_version": 5
