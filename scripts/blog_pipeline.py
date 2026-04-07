@@ -13,14 +13,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-PIPELINE_VERSION = 5
+PIPELINE_VERSION = 1
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "content" / "blog"
 POSTS_DIR = ROOT / "_posts"
 MANIFEST_PATH = ROOT / ".blog-pipeline-manifest.json"
 MARKER = "<!-- AUTO-GENERATED: blog-pipeline"
 REQUIRED_META_FIELDS = ("title", "date")
-CJK_PATTERN = re.compile(r"[\u3400-\u9FFF]")
 
 
 class PipelineError(RuntimeError):
@@ -172,117 +171,6 @@ def slugify(stem: str) -> str:
     return normalized
 
 
-def count_unescaped_dollars(text: str) -> int:
-    count = 0
-    escaped = False
-    for char in text:
-        if escaped:
-            escaped = False
-            continue
-        if char == "\\":
-            escaped = True
-            continue
-        if char == "$":
-            count += 1
-    return count
-
-
-def looks_like_math_body(body: str, allow_newline: bool) -> bool:
-    candidate = body.strip()
-    if not candidate:
-        return False
-    if len(candidate) > 400:
-        return False
-    if not allow_newline and "\n" in candidate:
-        return False
-    if CJK_PATTERN.search(candidate):
-        return False
-    if re.search(r"\\[A-Za-z]+", candidate):
-        return True
-    if re.search(r"[\^_{}=<>+\-*/]", candidate):
-        return True
-    if re.fullmatch(r"[A-Za-z0-9(),.\s]+", candidate):
-        return True
-    return False
-
-
-def repair_missing_inline_openers(line_core: str) -> str:
-    chars = list(line_core)
-    i = 0
-    while i < len(chars):
-        if chars[i] != "?":
-            i += 1
-            continue
-        if i > 0 and chars[i - 1] == "$":
-            i += 1
-            continue
-
-        j = i + 1
-        while j < len(chars) and chars[j].isspace():
-            j += 1
-        if j >= len(chars):
-            i += 1
-            continue
-        if chars[j] == "$":
-            i += 1
-            continue
-
-        k = j
-        while k < len(chars):
-            if chars[k] == "\\":
-                k += 2
-                continue
-            if chars[k] == "$":
-                body = "".join(chars[j:k])
-                if looks_like_math_body(body, allow_newline=False):
-                    chars[i] = "$"
-                break
-            if chars[k] in {"\r", "\n"}:
-                break
-            k += 1
-        i += 1
-    return "".join(chars)
-
-
-def repair_misplaced_math_markers(text: str) -> str:
-    lines = text.splitlines(keepends=True)
-    repaired: List[str] = []
-    candidate_pattern = re.compile(
-        r"\?(?=\s*(\\|[A-Za-z](?:\\|[\^_({ ]|$)|\())"
-    )
-
-    for line in lines:
-        line_core = line.rstrip("\r\n")
-        line_break = line[len(line_core) :]
-        line_core = repair_missing_inline_openers(line_core)
-        if count_unescaped_dollars(line_core) % 2 == 0:
-            repaired.append(line_core + line_break)
-            continue
-
-        last_dollar = line_core.rfind("$")
-        if last_dollar < 0:
-            repaired.append(line)
-            continue
-
-        chars = list(line_core)
-        replaced = False
-        matches = [m for m in candidate_pattern.finditer(line_core[:last_dollar])]
-        for match in reversed(matches):
-            idx = match.start()
-            chars[idx] = "$"
-            candidate = "".join(chars)
-            if count_unescaped_dollars(candidate) % 2 == 0:
-                repaired.append(candidate + line_break)
-                replaced = True
-                break
-            chars[idx] = "?"
-
-        if not replaced:
-            repaired.append(line_core + line_break)
-
-    return "".join(repaired)
-
-
 def protect_segments(text: str) -> Tuple[str, Dict[str, str]]:
     placeholders: Dict[str, str] = {}
     counter = 0
@@ -304,14 +192,10 @@ def protect_segments(text: str) -> Tuple[str, Dict[str, str]]:
         re.compile(r"(?ms)^[ \t]*~~~.*?^[ \t]*~~~[ \t]*\r?\n?"),
     )
     inline_code_pattern = re.compile(r"`[^`\n]+`")
-    svg_block_pattern = re.compile(r"(?is)<svg\b.*?</svg>")
-    html_comment_pattern = re.compile(r"(?s)<!--.*?-->")
 
     protected = text
     for pattern in fenced_patterns:
         protected = stash(pattern, protected)
-    protected = stash(svg_block_pattern, protected)
-    protected = stash(html_comment_pattern, protected)
     protected = stash(inline_code_pattern, protected)
     return protected, placeholders
 
@@ -324,58 +208,21 @@ def restore_segments(text: str, placeholders: Dict[str, str]) -> str:
 
 
 def normalize_math(text: str) -> str:
-    repaired = repair_misplaced_math_markers(text)
-    protected, placeholders = protect_segments(repaired)
+    protected, placeholders = protect_segments(text)
 
-    def wrap_display(body: str) -> str:
-        normalized = body.strip("\n")
-        return f"\n<div class=\"math-display\">\n\\[\n{normalized}\n\\]\n</div>\n"
-
-    def wrap_inline(body: str) -> str:
-        normalized = body.strip()
-        if not normalized:
-            return ""
-        return f"<span class=\"math-inline\">\\({normalized}\\)</span>"
-
-    protected = re.sub(
-        r"(?<!\\)\\\[(.+?)(?<!\\)\\\]",
-        lambda match: (
-            wrap_display(match.group(1))
-            if looks_like_math_body(match.group(1), allow_newline=True)
-            else match.group(0)
-        ),
-        protected,
-        flags=re.S,
-    )
+    def display_replacer(match: re.Match[str]) -> str:
+        body = match.group(1).strip("\n")
+        return f"\n\\[\n{body}\n\\]\n"
 
     protected = re.sub(
         r"(?<!\\)\$\$(.+?)(?<!\\)\$\$",
-        lambda match: (
-            wrap_display(match.group(1))
-            if looks_like_math_body(match.group(1), allow_newline=True)
-            else match.group(0)
-        ),
+        display_replacer,
         protected,
         flags=re.S,
     )
-
-    protected = re.sub(
-        r"(?<!\\)\\\((.+?)(?<!\\)\\\)",
-        lambda match: (
-            wrap_inline(match.group(1))
-            if looks_like_math_body(match.group(1), allow_newline=False)
-            else match.group(0)
-        ),
-        protected,
-    )
-
     protected = re.sub(
         r"(?<!\\)\$(?!\$)([^$\n]+?)(?<!\\)\$",
-        lambda match: (
-            wrap_inline(match.group(1))
-            if looks_like_math_body(match.group(1), allow_newline=False)
-            else match.group(0)
-        ),
+        lambda match: rf"\({match.group(1)}\)",
         protected,
     )
     return restore_segments(protected, placeholders)
@@ -486,9 +333,7 @@ def should_skip_generation(doc: SourceDocument, old_entry: Dict[str, str] | None
     if old_entry.get("source_sha256") != doc.source_sha256:
         return False
     old_post = ROOT / old_entry.get("post", "")
-    if old_post != doc.post_path or not old_post.exists():
-        return False
-    return MARKER in read_text(old_post)
+    return old_post == doc.post_path and old_post.exists()
 
 
 def run_pipeline() -> Tuple[int, int]:
