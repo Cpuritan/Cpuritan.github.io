@@ -24,7 +24,14 @@ body {
 }
 
 body {
-  font-family: "Comic Shanns", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family:
+    "Comic Shanns",
+    "Songti SC",
+    "STSong",
+    "SimSun",
+    "Noto Serif CJK SC",
+    "Source Han Serif SC",
+    serif;
   line-height: 1.65;
 }
 

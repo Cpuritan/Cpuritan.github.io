@@ -22,8 +22,8 @@ const {
     <script is:inline>
       window.MathJax = {
         tex: {
-          inlineMath: [["$", "$"], ["\\(", "\\)"]],
-          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          inlineMath: [["\\(", "\\)"], ["$", "$"]],
+          displayMath: [["\\[", "\\]"], ["$$", "$$"]],
           processEscapes: true,
           processEnvironments: true,
           packages: { "[+]": ["ams", "noerrors", "noundefined"] }
@@ -46,6 +46,11 @@ const {
           href="/blog/"
           class={Astro.url.pathname.startsWith("/blog/") ? "active" : ""}
           >Blog</a
+        >
+        <a
+          href="/research/"
+          class={Astro.url.pathname.startsWith("/research/") ? "active" : ""}
+          >RESEARCH</a
         >
       </nav>
     </header>

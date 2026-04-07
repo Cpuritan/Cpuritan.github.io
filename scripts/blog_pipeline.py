@@ -8,11 +8,20 @@ import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "src" / "content" / "blog"
 REQUIRED_META_FIELDS = ("title", "date")
+
+FIXABLE_PATTERNS = {
+    "broken_svg_tag_close": re.compile(r"\?\/text>", re.IGNORECASE),
+    "suspicious_math_before_dollar": re.compile(r"\?\$(?=\$|\\|[A-Za-z(\[{])"),
+    "suspicious_math_after_dollar": re.compile(r"\$\?(?=\$|\\|[A-Za-z(\[{])"),
+    "suspicious_math_before_tex_command": re.compile(r"\?\\[A-Za-z]+"),
+}
+
+FENCED_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~", re.MULTILINE)
 
 
 class PipelineError(RuntimeError):
@@ -50,7 +59,7 @@ def parse_date(value: str) -> datetime:
     raise PipelineError(f"Unsupported date format: {value}")
 
 
-def parse_front_matter(path: Path) -> Dict[str, str]:
+def parse_front_matter(path: Path) -> Tuple[Dict[str, str], str]:
     raw = read_text(path)
     match = re.match(r"\A---\s*\r?\n(.*?)\r?\n---\s*\r?\n?(.*)\Z", raw, re.S)
     if not match:
@@ -75,7 +84,8 @@ def parse_front_matter(path: Path) -> Dict[str, str]:
             raise PipelineError(f"{path} missing required field: {field}")
 
     parse_date(metadata["date"])
-    return metadata
+    body = match.group(2)
+    return metadata, body
 
 
 def slugify(stem: str) -> str:
@@ -88,16 +98,37 @@ def slugify(stem: str) -> str:
     return normalized
 
 
-def collect_sources() -> Tuple[int, int]:
+def inspect_content(path: Path, body: str) -> List[str]:
+    issues: List[str] = []
+    check_text = FENCED_CODE_BLOCK_RE.sub("", body)
+
+    open_svg = len(re.findall(r"<svg\b", check_text, flags=re.IGNORECASE))
+    close_svg = len(re.findall(r"</svg>", check_text, flags=re.IGNORECASE))
+    if open_svg != close_svg:
+        raise PipelineError(
+            f"{path} has unmatched SVG block count: <svg={open_svg}, </svg>={close_svg}"
+        )
+
+    for issue_name, pattern in FIXABLE_PATTERNS.items():
+        count = len(pattern.findall(check_text))
+        if count > 0:
+            issues.append(f"{path} -> {issue_name}: {count}")
+
+    return issues
+
+
+def collect_sources() -> Tuple[int, int, List[str]]:
     if not SOURCE_DIR.exists():
-        return 0, 0
+        return 0, 0, []
 
     seen_slugs: Dict[str, str] = {}
+    issues: List[str] = []
     count = 0
     for path in sorted(SOURCE_DIR.glob("*.md")):
         if not path.is_file():
             continue
-        parse_front_matter(path)
+        _, body = parse_front_matter(path)
+        issues.extend(inspect_content(path, body))
         slug = slugify(path.stem)
         prior = seen_slugs.get(slug)
         if prior:
@@ -107,18 +138,21 @@ def collect_sources() -> Tuple[int, int]:
         seen_slugs[slug] = path.name
         count += 1
 
-    return count, len(seen_slugs)
+    return count, len(seen_slugs), issues
 
 
 def main() -> int:
     try:
-        sources, unique_slugs = collect_sources()
+        sources, unique_slugs, issues = collect_sources()
     except PipelineError as exc:
         print(f"[blog-validate] ERROR: {exc}", file=sys.stderr)
         return 1
 
+    for item in issues:
+        print(f"[blog-validate] WARN: {item}")
+
     print(
-        f"[blog-validate] Completed: sources={sources}, unique_slugs={unique_slugs}"
+        f"[blog-validate] Completed: sources={sources}, unique_slugs={unique_slugs}, warnings={len(issues)}"
     )
     return 0
 

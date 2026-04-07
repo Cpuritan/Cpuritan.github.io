@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "astro": "^4.16.18",
+    "rehype-mathjax": "^7.1.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.34.5",
     "zod": "^3.23.8"
   }
 }
