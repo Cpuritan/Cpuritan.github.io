@@ -1,6 +1,6 @@
 ---
 title: "Crew Scheduling Problems in Airline Operations"
-date: 2025-07-20 12:25:57 +0800
+date: 2026-04-07 20:28:46 +0800
 ---
 
 <!-- AUTO-GENERATED: scripts/blog_pipeline.py -->
