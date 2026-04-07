@@ -1,6 +1,8 @@
 import { defineConfig } from "astro/config";
+import rehypeMathjax from "rehype-mathjax";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 
 const BLOG_MARKDOWN_RE = /[\\/]src[\\/]content[\\/]blog[\\/].+\.md$/i;
 const PLACEHOLDER_RE = /@@CPURITAN_BLOCK_(\d+)@@/g;
@@ -30,26 +32,6 @@ function normalizeMathArtifacts(markdownContent) {
   return fixed;
 }
 
-function normalizeMathDelimiters(markdownContent) {
-  let fixed = markdownContent;
-
-  // Display math: $$ ... $$ -> block HTML container with \[ ... \]
-  fixed = fixed.replace(
-    /(^|[\r\n])\$\$([\s\S]*?)\$\$(?=$|[\r\n])/g,
-    (_, leading, expr) =>
-      `${leading}\n<div class="math-display">\\[\n${expr.trim()}\n\\]</div>\n`
-  );
-
-  // Inline math: $ ... $ -> inline HTML container with \( ... \)
-  fixed = fixed.replace(
-    /(^|[^\$\\])\$(?!\$)([^$\r\n]+?)\$(?!\$)/g,
-    (_, prefix, expr) =>
-      `${prefix}<span class="math-inline">\\(${expr.trim()}\\)</span>`
-  );
-
-  return fixed;
-}
-
 function normalizeBlogMarkdown(markdownSource) {
   const protectedBlocks = [];
   const protect = (content) => {
@@ -68,7 +50,6 @@ function normalizeBlogMarkdown(markdownSource) {
   );
 
   working = normalizeMathArtifacts(working);
-  working = normalizeMathDelimiters(working);
 
   return working.replace(
     PLACEHOLDER_RE,
@@ -109,8 +90,8 @@ export default defineConfig({
   output: "static",
   trailingSlash: "always",
   markdown: {
-    remarkPlugins: [remarkGfm],
-    rehypePlugins: [rehypeRaw],
+    remarkPlugins: [remarkGfm, remarkMath],
+    rehypePlugins: [rehypeRaw, rehypeMathjax],
     remarkRehype: {
       allowDangerousHtml: true
     }

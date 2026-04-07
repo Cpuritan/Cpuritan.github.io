@@ -81,6 +81,34 @@ h1 {
   max-width: 720px;
 }
 
+.content-panel {
+  margin: 1rem 0 1.2rem;
+  padding: 0.85rem 1rem;
+  border-left: 2px solid var(--line);
+  background: #fafafa;
+  color: #2b2b2b;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+.content-panel p {
+  margin: 0 0 0.75rem;
+}
+
+.content-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.font-kaiti {
+  font-family:
+    "Kaiti SC",
+    "STKaiti",
+    "KaiTi",
+    "BiauKai",
+    serif;
+  font-size: 1.04rem;
+}
+
 .home-intro ul {
   padding-left: 1.2rem;
 }
