@@ -120,6 +120,7 @@ $$
 >若$LB\ge z^{*}_{LP_{k_{l+1}}}$或  $l=K$迭代停止；否则继续；
 
 简单理解：
+
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 553.9231235981763 257.5069574402319" width="553.9231235981763" height="257.5069574402319">
   <!-- svg-source:excalidraw -->
   
