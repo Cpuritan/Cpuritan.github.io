@@ -1,0 +1,40 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const entries = (await getCollection("musings")).filter(({ data }) => !data.draft);
+  return entries.map((entry) => {
+    const date = entry.data.date;
+    return {
+      params: {
+        year: String(date.getFullYear()),
+        month: String(date.getMonth() + 1).padStart(2, "0"),
+        day: String(date.getDate()).padStart(2, "0"),
+        slug: entry.slug
+      },
+      props: { entry }
+    };
+  });
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<BaseLayout title={`${entry.data.title} | Cpuritan`} description={entry.data.title}>
+  <article class="post-page">
+    <header class="post-header">
+      <h1>{entry.data.title}</h1>
+      <p class="meta">{entry.data.date.toISOString().slice(0, 10)}</p>
+      {entry.data.latex_pdf ? (
+        <p class="meta">
+          PDF: <a href={entry.data.latex_pdf}>Open backup</a>
+        </p>
+      ) : null}
+    </header>
+    <div class="post-content">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
