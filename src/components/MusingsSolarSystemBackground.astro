@@ -10,6 +10,7 @@
     BufferGeometry,
     CanvasTexture,
     CircleGeometry,
+    Clock,
     Color,
     DirectionalLight,
     DoubleSide,
@@ -124,12 +125,20 @@
       return;
     }
 
-    const renderer = new WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance"
-    });
+    let renderer;
+
+    try {
+      renderer = new WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
+      });
+    } catch {
+      root.setAttribute("data-solar-system-failed", "true");
+      return;
+    }
+
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0xffffff, 0);
@@ -154,12 +163,12 @@
       map: sunGlowTexture,
       color: 0xffd972,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.56,
       depthWrite: false,
       blending: AdditiveBlending
     });
     const sunGlow = new Sprite(sunGlowMaterial);
-    sunGlow.scale.set(38, 38, 1);
+    sunGlow.scale.set(42, 42, 1);
     systemGroup.add(sunGlow);
 
     const sun = new Mesh(
@@ -183,7 +192,7 @@
       new MeshBasicMaterial({
         color: 0xf7f3ec,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.3,
         depthWrite: false
       })
     );
@@ -195,7 +204,7 @@
       createPlanet(definition, renderer, systemGroup)
     );
 
-    const clock = new THREE.Clock();
+    const clock = new Clock();
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animationFrame = 0;
 
@@ -288,9 +297,9 @@
     const orbitLine = new LineLoop(
       new BufferGeometry().setFromPoints(buildOrbitPoints(definition.distance)),
       new LineBasicMaterial({
-        color: 0xd6d9df,
+        color: definition.name === "jupiter" || definition.name === "saturn" ? 0xc7ced8 : 0xd4d8df,
         transparent: true,
-        opacity: definition.name === "neptune" ? 0.38 : 0.52,
+        opacity: definition.name === "neptune" ? 0.48 : 0.7,
         depthWrite: false
       })
     );
@@ -523,19 +532,20 @@
     display: block;
     width: 100%;
     height: 100%;
-    opacity: 0.96;
+    opacity: 1;
+    filter: saturate(1.06) contrast(1.05);
   }
 
   .musings-solar-system__veil {
     background:
-      radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 28%),
+      radial-gradient(circle at 14% 18%, rgba(255, 250, 240, 0.08), rgba(255, 255, 255, 0) 26%),
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.92) 0%,
-        rgba(255, 255, 255, 0.22) 16%,
-        rgba(255, 255, 255, 0.08) 50%,
-        rgba(255, 255, 255, 0.22) 82%,
-        rgba(255, 255, 255, 0.94) 100%
+        rgba(255, 255, 255, 0.84) 0%,
+        rgba(255, 255, 255, 0.14) 15%,
+        rgba(255, 255, 255, 0.03) 48%,
+        rgba(255, 255, 255, 0.14) 82%,
+        rgba(255, 255, 255, 0.88) 100%
       );
   }
 
@@ -544,10 +554,10 @@
       background:
         linear-gradient(
           180deg,
-          rgba(255, 255, 255, 0.96) 0%,
-          rgba(255, 255, 255, 0.36) 18%,
-          rgba(255, 255, 255, 0.12) 54%,
-          rgba(255, 255, 255, 0.82) 100%
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(255, 255, 255, 0.26) 18%,
+          rgba(255, 255, 255, 0.08) 54%,
+          rgba(255, 255, 255, 0.8) 100%
         );
     }
   }
