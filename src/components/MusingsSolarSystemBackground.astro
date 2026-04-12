@@ -10,7 +10,6 @@
     BufferGeometry,
     CanvasTexture,
     CircleGeometry,
-    Clock,
     Color,
     DirectionalLight,
     DoubleSide,
@@ -33,6 +32,7 @@
     SpriteMaterial,
     SRGBColorSpace,
     Texture,
+    TextureLoader,
     Vector3,
     WebGLRenderer
   } from "three";
@@ -115,6 +115,28 @@
   ];
 
   const degToRad = MathUtils.degToRad;
+  // Start with procedural textures for instant paint, then swap in compressed real maps.
+  const realisticTextureSources = {
+    mercury: "/assets/musings/solar-system/mercury.webp",
+    venus: "/assets/musings/solar-system/venus.webp",
+    earth: "/assets/musings/solar-system/earth.webp",
+    mars: "/assets/musings/solar-system/mars.webp",
+    jupiter: "/assets/musings/solar-system/jupiter.webp",
+    saturn: "/assets/musings/solar-system/saturn.webp",
+    saturnRing: "/assets/musings/solar-system/saturn-ring.png",
+    uranus: "/assets/musings/solar-system/uranus.webp",
+    neptune: "/assets/musings/solar-system/neptune.webp"
+  };
+  const planetMaterialSettings = {
+    mercury: { roughness: 0.97, metalness: 0.03 },
+    venus: { roughness: 0.94, metalness: 0.02 },
+    earth: { roughness: 0.86, metalness: 0.02 },
+    mars: { roughness: 0.95, metalness: 0.02 },
+    jupiter: { roughness: 0.89, metalness: 0.01 },
+    saturn: { roughness: 0.9, metalness: 0.01 },
+    uranus: { roughness: 0.84, metalness: 0.01 },
+    neptune: { roughness: 0.84, metalness: 0.01 }
+  };
 
   instances.forEach((root) => setupScene(root));
 
@@ -142,6 +164,7 @@
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0xffffff, 0);
+    const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 6);
 
     const scene = new Scene();
     scene.fog = new Fog(0xffffff, 120, 245);
@@ -200,13 +223,15 @@
     eclipticDisk.position.y = -0.25;
     systemGroup.add(eclipticDisk);
 
-    const planets = planetDefinitions.map((definition) =>
-      createPlanet(definition, renderer, systemGroup)
-    );
+    const planets = planetDefinitions.map((definition) => createPlanet(definition, systemGroup, maxAnisotropy));
 
-    const clock = new Clock();
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let animationFrame = 0;
+    let isRunning = false;
+    let isDisposed = false;
+    let startedAt = 0;
+    let pausedElapsed = 0;
+    let hasQueuedTextureUpgrade = false;
 
     const resize = () => {
       const width = root.clientWidth || window.innerWidth;
@@ -225,8 +250,14 @@
       systemGroup.position.y = width < 720 ? -6 : -2;
     };
 
+    const getElapsed = () => pausedElapsed + (performance.now() - startedAt) / 1000;
+
     const renderFrame = () => {
-      const elapsed = clock.getElapsedTime();
+      if (!isRunning || isDisposed) {
+        return;
+      }
+
+      const elapsed = getElapsed();
       const animated = !mediaQuery.matches;
 
       if (animated) {
@@ -253,29 +284,113 @@
       animationFrame = window.requestAnimationFrame(renderFrame);
     };
 
+    const startAnimation = () => {
+      if (isDisposed || isRunning) {
+        return;
+      }
+
+      startedAt = performance.now();
+      isRunning = true;
+      renderFrame();
+      queueTextureUpgrade();
+    };
+
+    const stopAnimation = () => {
+      if (!isRunning) {
+        return;
+      }
+
+      pausedElapsed = getElapsed();
+      isRunning = false;
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+    };
+
+    const queueTextureUpgrade = () => {
+      if (hasQueuedTextureUpgrade || isDisposed) {
+        return;
+      }
+
+      hasQueuedTextureUpgrade = true;
+
+      const beginUpgrade = () => {
+        if (isDisposed) {
+          return;
+        }
+
+        loadRealisticTextures(planets, maxAnisotropy, () => isDisposed);
+      };
+
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(beginUpgrade, { timeout: 1200 });
+        return;
+      }
+
+      window.setTimeout(beginUpgrade, 120);
+    };
+
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(root);
     resize();
-    renderFrame();
+    startAnimation();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stopAnimation();
+        return;
+      }
+
+      resize();
+      startAnimation();
+    };
+
+    const handlePageShow = (event) => {
+      if (!event.persisted || isDisposed) {
+        return;
+      }
+
+      resize();
+      startAnimation();
+    };
+
+    const handlePageHide = (event) => {
+      if (event.persisted) {
+        stopAnimation();
+        return;
+      }
+
+      dispose();
+    };
 
     const dispose = () => {
-      window.cancelAnimationFrame(animationFrame);
+      if (isDisposed) {
+        return;
+      }
+
+      isDisposed = true;
+      stopAnimation();
       resizeObserver.disconnect();
       mediaQuery.removeEventListener("change", resize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
 
       planets.forEach((planet) => {
         planet.orbitLine.geometry.dispose();
         planet.orbitLine.material.dispose();
+        disposeMaterialMap(planet.material);
         planet.mesh.geometry.dispose();
-        planet.mesh.material.dispose();
+        planet.material.dispose();
 
-        if (planet.ring) {
+        if (planet.ring && planet.ringMaterial) {
+          disposeMaterialMap(planet.ringMaterial);
           planet.ring.geometry.dispose();
-          planet.ring.material.dispose();
+          planet.ringMaterial.dispose();
         }
       });
 
       sun.geometry.dispose();
+      disposeMaterialMap(sun.material);
       sun.material.dispose();
       sunGlowTexture.dispose();
       sunGlowMaterial.dispose();
@@ -285,10 +400,12 @@
     };
 
     mediaQuery.addEventListener("change", resize);
-    window.addEventListener("pagehide", dispose, { once: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
   }
 
-  function createPlanet(definition, renderer, systemGroup) {
+  function createPlanet(definition, systemGroup, maxAnisotropy) {
     const orbitGroup = new Group();
     orbitGroup.rotation.x = degToRad(definition.inclination);
     orbitGroup.rotation.y = degToRad(definition.orbitalOffset);
@@ -305,26 +422,29 @@
     );
     orbitGroup.add(orbitLine);
 
+    const materialSettings = getPlanetMaterialSettings(definition.name);
     const material = new MeshStandardMaterial({
       map: createPlanetTexture(definition.name),
-      roughness: 0.94,
-      metalness: 0.02
+      roughness: materialSettings.roughness,
+      metalness: materialSettings.metalness
     });
     const mesh = new Mesh(new SphereGeometry(definition.radius, 48, 48), material);
     mesh.rotation.z = degToRad(definition.name === "uranus" ? 98 : 18);
     orbitGroup.add(mesh);
 
     let ring;
+    let ringMaterial;
     if (definition.name === "saturn") {
+      ringMaterial = new MeshBasicMaterial({
+        color: 0xf4ead6,
+        transparent: true,
+        opacity: 0.82,
+        side: DoubleSide,
+        depthWrite: false
+      });
       ring = new Mesh(
         new RingGeometry(definition.radius * 1.45, definition.radius * 2.25, 96),
-        new MeshBasicMaterial({
-          color: 0xd9c49a,
-          transparent: true,
-          opacity: 0.52,
-          side: DoubleSide,
-          depthWrite: false
-        })
+        ringMaterial
       );
       ring.rotation.x = Math.PI / 2;
       ring.rotation.z = degToRad(24);
@@ -332,18 +452,61 @@
     }
 
     if (material.map) {
-      material.map.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+      configureSurfaceTexture(material.map, maxAnisotropy);
     }
 
     return {
+      name: definition.name,
       orbitLine,
+      material,
       mesh,
       ring,
+      ringMaterial,
       distance: definition.distance,
       speed: definition.speed * 0.22,
       spin: definition.spin,
       baseAngle: degToRad(definition.orbitalOffset * 2.1)
     };
+  }
+
+  async function loadRealisticTextures(planets, maxAnisotropy, isDisposed) {
+    const textureLoader = new TextureLoader();
+    const surfaceLoads = planets
+      .filter((planet) => planet.name in realisticTextureSources)
+      .map(async (planet) => {
+        const texture = await textureLoader.loadAsync(realisticTextureSources[planet.name]);
+        configureSurfaceTexture(texture, maxAnisotropy);
+
+        if (isDisposed()) {
+          texture.dispose();
+          return;
+        }
+
+        replaceMaterialMap(planet.material, texture);
+        Object.assign(planet.material, getPlanetMaterialSettings(planet.name));
+        planet.material.needsUpdate = true;
+      });
+
+    const saturn = planets.find((planet) => planet.name === "saturn" && planet.ringMaterial);
+    if (saturn?.ringMaterial) {
+      surfaceLoads.push(
+        textureLoader.loadAsync(realisticTextureSources.saturnRing).then((texture) => {
+          configureRingTexture(texture, maxAnisotropy);
+
+          if (isDisposed()) {
+            texture.dispose();
+            return;
+          }
+
+          replaceMaterialMap(saturn.ringMaterial, texture);
+          saturn.ringMaterial.color.set("#fbf4e5");
+          saturn.ringMaterial.opacity = 0.98;
+          saturn.ringMaterial.needsUpdate = true;
+        })
+      );
+    }
+
+    await Promise.allSettled(surfaceLoads);
   }
 
   function buildOrbitPoints(radius) {
@@ -427,6 +590,44 @@
     texture.wrapS = RepeatWrapping;
     texture.colorSpace = SRGBColorSpace;
     return texture;
+  }
+
+  function getPlanetMaterialSettings(name) {
+    return planetMaterialSettings[name] ?? { roughness: 0.94, metalness: 0.02 };
+  }
+
+  function configureSurfaceTexture(texture, maxAnisotropy) {
+    texture.wrapS = RepeatWrapping;
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = maxAnisotropy;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  function configureRingTexture(texture, maxAnisotropy) {
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = Math.min(maxAnisotropy, 4);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  function replaceMaterialMap(material, texture) {
+    const previousMap = material.map;
+    material.map = texture;
+
+    if (previousMap && previousMap !== texture) {
+      previousMap.dispose();
+    }
+  }
+
+  function disposeMaterialMap(material) {
+    if (!material?.map) {
+      return;
+    }
+
+    const texture = material.map;
+    material.map = null;
+    texture.dispose();
   }
 
   function paintGradient(context, canvas, colors) {
