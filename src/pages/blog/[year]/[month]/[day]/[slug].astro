@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import { formatDate } from "../../../../../utils/date";
 
 export async function getStaticPaths() {
   const entries = await getCollection("blog", ({ data }) => !data.draft);
@@ -26,7 +27,7 @@ const { Content } = await render(entry);
   <article class="post-page">
     <header class="post-header">
       <h1>{entry.data.title}</h1>
-      <p class="meta">{entry.data.date.toISOString().slice(0, 10)}</p>
+      <p class="meta">{formatDate(entry.data.date)}</p>
       {entry.data.latex_pdf ? (
         <p class="meta">
           PDF: <a href={entry.data.latex_pdf}>Open backup</a>
