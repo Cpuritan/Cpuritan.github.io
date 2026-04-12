@@ -1,8 +1,6 @@
 <div class="musings-solar-system" data-musings-solar-system>
-  <div class="musings-solar-system__frame">
-    <canvas class="musings-solar-system__canvas" aria-hidden="true"></canvas>
-    <div class="musings-solar-system__veil"></div>
-  </div>
+  <canvas class="musings-solar-system__canvas" aria-hidden="true"></canvas>
+  <div class="musings-solar-system__veil"></div>
 </div>
 
 <script>
@@ -518,17 +516,14 @@
 <style>
   .musings-solar-system {
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-  }
-
-  .musings-solar-system__frame {
-    position: absolute;
-    inset: 0;
-    transform: scale(0.8);
-    transform-origin: center top;
   }
 
   .musings-solar-system__canvas,
@@ -559,11 +554,6 @@
   }
 
   @media (max-width: 720px) {
-    .musings-solar-system__frame {
-      transform: scale(0.8);
-      transform-origin: center top;
-    }
-
     .musings-solar-system__veil {
       background:
         linear-gradient(

@@ -48,6 +48,7 @@ const buildMusingsUrl = (slug: string, date: Date): string => {
     z-index: 1;
     min-height: clamp(28rem, 58vw, 38rem);
     padding-top: clamp(1rem, 2vw, 1.5rem);
+    isolation: isolate;
   }
 
   .musings-page h1,
@@ -66,9 +67,9 @@ const buildMusingsUrl = (slug: string, date: Date): string => {
   }
 
   .musings-page__grid .blog-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(176, 184, 197, 0.42);
-    backdrop-filter: blur(6px);
+    background: transparent;
+    border-color: rgba(176, 184, 197, 0.52);
     box-shadow: none;
+    backdrop-filter: none;
   }
 </style>
