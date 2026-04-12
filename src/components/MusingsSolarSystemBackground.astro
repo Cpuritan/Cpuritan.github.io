@@ -1,0 +1,554 @@
+<div class="musings-solar-system" data-musings-solar-system>
+  <canvas class="musings-solar-system__canvas" aria-hidden="true"></canvas>
+  <div class="musings-solar-system__veil"></div>
+</div>
+
+<script>
+  import {
+    AdditiveBlending,
+    AmbientLight,
+    BufferGeometry,
+    CanvasTexture,
+    CircleGeometry,
+    Color,
+    DirectionalLight,
+    DoubleSide,
+    Fog,
+    Group,
+    HemisphereLight,
+    LineBasicMaterial,
+    LineLoop,
+    MathUtils,
+    Mesh,
+    MeshBasicMaterial,
+    MeshStandardMaterial,
+    PerspectiveCamera,
+    PointLight,
+    RepeatWrapping,
+    RingGeometry,
+    Scene,
+    SphereGeometry,
+    Sprite,
+    SpriteMaterial,
+    SRGBColorSpace,
+    Texture,
+    Vector3,
+    WebGLRenderer
+  } from "three";
+
+  const instances = document.querySelectorAll("[data-musings-solar-system]");
+
+  const planetDefinitions = [
+    {
+      name: "mercury",
+      radius: 1.1,
+      distance: 18,
+      speed: 0.95,
+      spin: 0.018,
+      inclination: 7,
+      orbitalOffset: 18
+    },
+    {
+      name: "venus",
+      radius: 1.8,
+      distance: 27,
+      speed: 0.7,
+      spin: -0.011,
+      inclination: 3.4,
+      orbitalOffset: 74
+    },
+    {
+      name: "earth",
+      radius: 1.9,
+      distance: 37,
+      speed: 0.58,
+      spin: 0.027,
+      inclination: 0.2,
+      orbitalOffset: 132
+    },
+    {
+      name: "mars",
+      radius: 1.45,
+      distance: 48,
+      speed: 0.46,
+      spin: 0.022,
+      inclination: 1.8,
+      orbitalOffset: 228
+    },
+    {
+      name: "jupiter",
+      radius: 5.9,
+      distance: 69,
+      speed: 0.24,
+      spin: 0.041,
+      inclination: 1.3,
+      orbitalOffset: 310
+    },
+    {
+      name: "saturn",
+      radius: 5.1,
+      distance: 92,
+      speed: 0.17,
+      spin: 0.033,
+      inclination: 2.5,
+      orbitalOffset: 25
+    },
+    {
+      name: "uranus",
+      radius: 3.8,
+      distance: 114,
+      speed: 0.11,
+      spin: -0.024,
+      inclination: 0.8,
+      orbitalOffset: 156
+    },
+    {
+      name: "neptune",
+      radius: 3.7,
+      distance: 135,
+      speed: 0.08,
+      spin: 0.021,
+      inclination: 1.8,
+      orbitalOffset: 246
+    }
+  ];
+
+  const degToRad = MathUtils.degToRad;
+
+  instances.forEach((root) => setupScene(root));
+
+  function setupScene(root) {
+    const canvas = root.querySelector("canvas");
+
+    if (!(canvas instanceof HTMLCanvasElement)) {
+      return;
+    }
+
+    const renderer = new WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance"
+    });
+    renderer.outputColorSpace = SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0xffffff, 0);
+
+    const scene = new Scene();
+    scene.fog = new Fog(0xffffff, 120, 245);
+
+    const camera = new PerspectiveCamera(31, 1, 0.1, 500);
+
+    const systemGroup = new Group();
+    systemGroup.rotation.y = degToRad(-22);
+    scene.add(systemGroup);
+
+    const ambientLight = new AmbientLight(0xffffff, 1.45);
+    const hemisphere = new HemisphereLight(0xffffff, 0xf1ece1, 1.05);
+    const fillLight = new DirectionalLight(0xffffff, 0.32);
+    fillLight.position.set(-80, 60, 95);
+    scene.add(ambientLight, hemisphere, fillLight);
+
+    const sunGlowTexture = createGlowTexture();
+    const sunGlowMaterial = new SpriteMaterial({
+      map: sunGlowTexture,
+      color: 0xffd972,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+      blending: AdditiveBlending
+    });
+    const sunGlow = new Sprite(sunGlowMaterial);
+    sunGlow.scale.set(38, 38, 1);
+    systemGroup.add(sunGlow);
+
+    const sun = new Mesh(
+      new SphereGeometry(8.5, 64, 64),
+      new MeshStandardMaterial({
+        map: createPlanetTexture("sun"),
+        emissive: new Color("#fdb53b"),
+        emissiveIntensity: 0.9,
+        roughness: 0.85,
+        metalness: 0
+      })
+    );
+    systemGroup.add(sun);
+
+    const sunLight = new PointLight(0xffe1a8, 42, 280, 2);
+    sunLight.position.set(0, 0, 0);
+    systemGroup.add(sunLight);
+
+    const eclipticDisk = new Mesh(
+      new CircleGeometry(150, 128),
+      new MeshBasicMaterial({
+        color: 0xf7f3ec,
+        transparent: true,
+        opacity: 0.2,
+        depthWrite: false
+      })
+    );
+    eclipticDisk.rotation.x = -Math.PI / 2;
+    eclipticDisk.position.y = -0.25;
+    systemGroup.add(eclipticDisk);
+
+    const planets = planetDefinitions.map((definition) =>
+      createPlanet(definition, renderer, systemGroup)
+    );
+
+    const clock = new THREE.Clock();
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let animationFrame = 0;
+
+    const resize = () => {
+      const width = root.clientWidth || window.innerWidth;
+      const height = root.clientHeight || window.innerHeight;
+
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(width, height, false);
+
+      camera.aspect = width / height;
+      camera.fov = width < 720 ? 38 : 31;
+      camera.position.set(0, width < 720 ? 100 : 76, width < 720 ? 184 : 152);
+      camera.lookAt(width < 960 ? 0 : -18, 0, 0);
+      camera.updateProjectionMatrix();
+
+      systemGroup.position.x = width < 960 ? 0 : -24;
+      systemGroup.position.y = width < 720 ? -6 : -2;
+    };
+
+    const renderFrame = () => {
+      const elapsed = clock.getElapsedTime();
+      const animated = !mediaQuery.matches;
+
+      if (animated) {
+        sun.rotation.y += 0.0018;
+        sun.rotation.z += 0.0004;
+        sunGlow.material.rotation += 0.0008;
+      }
+
+      planets.forEach((planet) => {
+        const angle = planet.baseAngle + elapsed * planet.speed;
+        planet.mesh.position.set(
+          Math.cos(angle) * planet.distance,
+          0,
+          Math.sin(angle) * planet.distance
+        );
+
+        if (animated) {
+          planet.mesh.rotation.y += planet.spin;
+          planet.mesh.rotation.x += planet.spin * 0.18;
+        }
+      });
+
+      renderer.render(scene, camera);
+      animationFrame = window.requestAnimationFrame(renderFrame);
+    };
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(root);
+    resize();
+    renderFrame();
+
+    const dispose = () => {
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      mediaQuery.removeEventListener("change", resize);
+
+      planets.forEach((planet) => {
+        planet.orbitLine.geometry.dispose();
+        planet.orbitLine.material.dispose();
+        planet.mesh.geometry.dispose();
+        planet.mesh.material.dispose();
+
+        if (planet.ring) {
+          planet.ring.geometry.dispose();
+          planet.ring.material.dispose();
+        }
+      });
+
+      sun.geometry.dispose();
+      sun.material.dispose();
+      sunGlowTexture.dispose();
+      sunGlowMaterial.dispose();
+      eclipticDisk.geometry.dispose();
+      eclipticDisk.material.dispose();
+      renderer.dispose();
+    };
+
+    mediaQuery.addEventListener("change", resize);
+    window.addEventListener("pagehide", dispose, { once: true });
+  }
+
+  function createPlanet(definition, renderer, systemGroup) {
+    const orbitGroup = new Group();
+    orbitGroup.rotation.x = degToRad(definition.inclination);
+    orbitGroup.rotation.y = degToRad(definition.orbitalOffset);
+    systemGroup.add(orbitGroup);
+
+    const orbitLine = new LineLoop(
+      new BufferGeometry().setFromPoints(buildOrbitPoints(definition.distance)),
+      new LineBasicMaterial({
+        color: 0xd6d9df,
+        transparent: true,
+        opacity: definition.name === "neptune" ? 0.38 : 0.52,
+        depthWrite: false
+      })
+    );
+    orbitGroup.add(orbitLine);
+
+    const material = new MeshStandardMaterial({
+      map: createPlanetTexture(definition.name),
+      roughness: 0.94,
+      metalness: 0.02
+    });
+    const mesh = new Mesh(new SphereGeometry(definition.radius, 48, 48), material);
+    mesh.rotation.z = degToRad(definition.name === "uranus" ? 98 : 18);
+    orbitGroup.add(mesh);
+
+    let ring;
+    if (definition.name === "saturn") {
+      ring = new Mesh(
+        new RingGeometry(definition.radius * 1.45, definition.radius * 2.25, 96),
+        new MeshBasicMaterial({
+          color: 0xd9c49a,
+          transparent: true,
+          opacity: 0.52,
+          side: DoubleSide,
+          depthWrite: false
+        })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.rotation.z = degToRad(24);
+      mesh.add(ring);
+    }
+
+    if (material.map) {
+      material.map.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+    }
+
+    return {
+      orbitLine,
+      mesh,
+      ring,
+      distance: definition.distance,
+      speed: definition.speed * 0.22,
+      spin: definition.spin,
+      baseAngle: degToRad(definition.orbitalOffset * 2.1)
+    };
+  }
+
+  function buildOrbitPoints(radius) {
+    const points = [];
+
+    for (let index = 0; index < 240; index += 1) {
+      const angle = (index / 240) * Math.PI * 2;
+      points.push(new Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
+    }
+
+    return points;
+  }
+
+  function createPlanetTexture(kind) {
+    const size = 1024;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size / 2;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    const rng = createRng(kind.length * 991);
+
+    switch (kind) {
+      case "sun":
+        paintGradient(context, canvas, ["#fff4be", "#ffbf4f", "#de7b1b"]);
+        paintBands(context, rng, ["rgba(255,255,255,0.24)", "rgba(255,154,48,0.28)"], 34, 0.16);
+        paintBlotches(context, rng, ["rgba(255,196,64,0.3)", "rgba(255,119,0,0.18)"], 42, 14, 80);
+        break;
+      case "mercury":
+        paintGradient(context, canvas, ["#b9aea0", "#7d7369", "#cfc5bb"]);
+        paintBlotches(context, rng, ["rgba(82,72,64,0.22)", "rgba(255,255,255,0.14)"], 150, 6, 34);
+        break;
+      case "venus":
+        paintGradient(context, canvas, ["#eed8ae", "#be9366", "#f7e4bb"]);
+        paintBands(context, rng, ["rgba(129,91,54,0.28)", "rgba(255,244,215,0.22)"], 46, 0.22);
+        paintBlotches(context, rng, ["rgba(156,110,64,0.22)"], 52, 18, 74);
+        break;
+      case "earth":
+        paintGradient(context, canvas, ["#295db8", "#17387a", "#4aa3d8"]);
+        paintBlotches(context, rng, ["rgba(71,137,82,0.82)", "rgba(173,192,114,0.7)"], 34, 26, 92);
+        paintBlotches(context, rng, ["rgba(255,255,255,0.52)"], 40, 18, 70);
+        paintBands(context, rng, ["rgba(255,255,255,0.12)"], 14, 0.09);
+        break;
+      case "mars":
+        paintGradient(context, canvas, ["#ae5b3d", "#7f321a", "#d4875b"]);
+        paintBlotches(context, rng, ["rgba(85,39,21,0.35)", "rgba(240,188,142,0.22)"], 82, 12, 58);
+        break;
+      case "jupiter":
+        paintGradient(context, canvas, ["#f0d4b2", "#b68058", "#f5e2ce"]);
+        paintBands(
+          context,
+          rng,
+          ["rgba(145,96,57,0.42)", "rgba(255,246,229,0.38)", "rgba(201,136,90,0.28)"],
+          60,
+          0.3
+        );
+        paintBlotches(context, rng, ["rgba(189,105,58,0.28)"], 22, 24, 90);
+        break;
+      case "saturn":
+        paintGradient(context, canvas, ["#f1dfb7", "#cfb17f", "#f7ecd0"]);
+        paintBands(context, rng, ["rgba(153,120,80,0.28)", "rgba(255,247,224,0.24)"], 52, 0.24);
+        break;
+      case "uranus":
+        paintGradient(context, canvas, ["#c8eff6", "#80c7d4", "#dff7fb"]);
+        paintBands(context, rng, ["rgba(255,255,255,0.12)", "rgba(118,183,195,0.14)"], 18, 0.12);
+        break;
+      case "neptune":
+        paintGradient(context, canvas, ["#2a52d6", "#14379f", "#69a4ff"]);
+        paintBands(context, rng, ["rgba(255,255,255,0.18)", "rgba(24,55,147,0.16)"], 24, 0.15);
+        paintBlotches(context, rng, ["rgba(119,162,255,0.18)"], 18, 16, 44);
+        break;
+      default:
+        paintGradient(context, canvas, ["#c4c4c4", "#999999", "#d7d7d7"]);
+    }
+
+    const texture = new CanvasTexture(canvas);
+    texture.wrapS = RepeatWrapping;
+    texture.colorSpace = SRGBColorSpace;
+    return texture;
+  }
+
+  function paintGradient(context, canvas, colors) {
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    const step = 1 / Math.max(colors.length - 1, 1);
+
+    colors.forEach((color, index) => {
+      gradient.addColorStop(index * step, color);
+    });
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function paintBands(context, rng, colors, count, maxOpacity) {
+    const { width, height } = context.canvas;
+
+    for (let index = 0; index < count; index += 1) {
+      const y = rng() * height;
+      const bandHeight = height * (0.02 + rng() * 0.08);
+      const color = colors[index % colors.length];
+      context.fillStyle = color.replace(/[\d.]+\)$/u, `${0.08 + rng() * maxOpacity})`);
+      context.fillRect(0, y, width, bandHeight);
+    }
+  }
+
+  function paintBlotches(context, rng, colors, count, minRadius, maxRadius) {
+    const { width, height } = context.canvas;
+
+    for (let index = 0; index < count; index += 1) {
+      const x = rng() * width;
+      const y = rng() * height;
+      const radius = minRadius + rng() * (maxRadius - minRadius);
+      const scaleY = 0.35 + rng() * 1.2;
+      const gradient = context.createRadialGradient(x, y, radius * 0.08, x, y, radius);
+      const color = colors[index % colors.length];
+
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+
+      context.save();
+      context.translate(x, y);
+      context.rotate(rng() * Math.PI * 2);
+      context.scale(1, scaleY);
+      context.translate(-x, -y);
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+  }
+
+  function createGlowTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return new Texture();
+    }
+
+    const gradient = context.createRadialGradient(256, 256, 10, 256, 256, 256);
+    gradient.addColorStop(0, "rgba(255, 248, 222, 0.95)");
+    gradient.addColorStop(0.18, "rgba(255, 210, 116, 0.68)");
+    gradient.addColorStop(0.55, "rgba(255, 189, 71, 0.18)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const texture = new CanvasTexture(canvas);
+    texture.colorSpace = SRGBColorSpace;
+    return texture;
+  }
+
+  function createRng(seed) {
+    let state = seed >>> 0;
+
+    return () => {
+      state = (1664525 * state + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+</script>
+
+<style>
+  .musings-solar-system {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .musings-solar-system__canvas,
+  .musings-solar-system__veil {
+    position: absolute;
+    inset: 0;
+  }
+
+  .musings-solar-system__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0.96;
+  }
+
+  .musings-solar-system__veil {
+    background:
+      radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 28%),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.92) 0%,
+        rgba(255, 255, 255, 0.22) 16%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.22) 82%,
+        rgba(255, 255, 255, 0.94) 100%
+      );
+  }
+
+  @media (max-width: 720px) {
+    .musings-solar-system__veil {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(255, 255, 255, 0.36) 18%,
+          rgba(255, 255, 255, 0.12) 54%,
+          rgba(255, 255, 255, 0.82) 100%
+        );
+    }
+  }
+</style>

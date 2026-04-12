@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import MusingsSolarSystemBackground from "../../components/MusingsSolarSystemBackground.astro";
 import { formatDate } from "../../utils/date";
 
 const posts = (await getCollection("musings"))
@@ -16,11 +17,18 @@ const buildMusingsUrl = (slug: string, date: Date): string => {
 ---
 
 <BaseLayout title="Musings | Cpuritan" description="Musings posts">
-  <section>
-    <h1>Musings</h1>
+  <MusingsSolarSystemBackground />
+  <section class="musings-page">
+    <div class="musings-page__intro">
+      <p class="musings-page__eyebrow">The ecliptic drifts quietly beneath each note.</p>
+      <h1>Musings</h1>
+      <p class="musings-page__summary">
+        在白底上，让思绪像行星一样缓慢公转。这里收纳一些不必急于抵达结论的文字。
+      </p>
+    </div>
     {
       posts.length > 0 ? (
-        <div class="blog-grid">
+        <div class="blog-grid musings-page__grid">
           {posts.map((post) => (
             <article class="blog-card">
               <h2>
@@ -39,3 +47,70 @@ const buildMusingsUrl = (slug: string, date: Date): string => {
     }
   </section>
 </BaseLayout>
+
+<style>
+  .musings-page {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 7rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+    gap: clamp(1.6rem, 4vw, 3rem);
+    align-items: start;
+    padding-top: clamp(1.5rem, 5vw, 3.8rem);
+  }
+
+  .musings-page__intro,
+  .musings-page__grid,
+  .musings-page > .meta {
+    position: relative;
+    z-index: 1;
+  }
+
+  .musings-page__intro {
+    max-width: 28rem;
+  }
+
+  .musings-page__eyebrow {
+    margin: 0 0 0.75rem;
+    color: #7c8596;
+    font-size: 0.8rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .musings-page__summary {
+    margin: 0;
+    max-width: 28rem;
+    color: #4b5563;
+    font-size: 1rem;
+    line-height: 1.85;
+  }
+
+  .musings-page__grid {
+    align-self: center;
+  }
+
+  .musings-page__grid .blog-card {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(176, 184, 197, 0.52);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 48px rgba(208, 213, 221, 0.28);
+  }
+
+  .musings-page__grid .blog-card h2 {
+    font-size: 1.22rem;
+  }
+
+  @media (max-width: 900px) {
+    .musings-page {
+      grid-template-columns: 1fr;
+      min-height: auto;
+      gap: 1.4rem;
+    }
+
+    .musings-page__intro {
+      max-width: none;
+    }
+  }
+</style>
