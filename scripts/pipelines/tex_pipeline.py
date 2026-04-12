@@ -26,11 +26,11 @@ PIPELINE_VERSION = 1
 REQUIRED_META_FIELDS = ("title", "date")
 MARKER = "<!-- AUTO-GENERATED: latex-pipeline"
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = ROOT / "latex"
 CONTENT_DIR = ROOT / "src" / "content" / "blog"
 PDF_DIR = ROOT / "public" / "assets" / "papers"
-MANIFEST_PATH = ROOT / ".latex-astro-pipeline-manifest.json"
+MANIFEST_PATH = ROOT / "scripts" / "state" / "latex-pipeline.json"
 
 
 class PipelineError(RuntimeError):

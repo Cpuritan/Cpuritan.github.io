@@ -1,13 +1,13 @@
-name: blog-content-guard
+name: content-guard
 
 on:
   push:
     branches:
       - main
     paths:
-      - "src/content/blog/**"
+      - "src/content/**"
       - "public/assets/posts/**"
-      - "scripts/content_guard.py"
+      - "scripts/checks/content_guard.py"
       - ".github/workflows/blog-publish.yml"
   workflow_dispatch:
 
@@ -24,5 +24,5 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate blog content integrity
-        run: python scripts/content_guard.py
+      - name: Validate content integrity
+        run: python scripts/checks/content_guard.py

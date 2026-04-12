@@ -21,4 +21,12 @@ const musings = defineCollection({
   schema: postSchema
 });
 
-export const collections = { blog, musings };
+const site = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string().optional(),
+    description: z.string().optional()
+  })
+});
+
+export const collections = { blog, musings, site };

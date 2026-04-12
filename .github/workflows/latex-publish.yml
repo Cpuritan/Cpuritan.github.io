@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "latex/**"
-      - "scripts/tex_pipeline.py"
+      - "scripts/pipelines/tex_pipeline.py"
       - ".github/workflows/latex-publish.yml"
   workflow_dispatch:
 
@@ -42,7 +42,7 @@ jobs:
         run: cargo install --locked tectonic
 
       - name: Generate LaTeX outputs
-        run: python scripts/tex_pipeline.py
+        run: python scripts/pipelines/tex_pipeline.py
 
       - name: Commit generated files
         run: |

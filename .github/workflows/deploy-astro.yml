@@ -27,8 +27,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate blog content integrity
-        run: python scripts/content_guard.py
+      - name: Validate content integrity
+        run: python scripts/checks/content_guard.py
 
       - name: Setup Node
         uses: actions/setup-node@v4

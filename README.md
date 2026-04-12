@@ -2,9 +2,10 @@
 
 This repository uses Astro for `cpuritan.cn` with a minimal white layout:
 
-- top navigation: `Home / Blog / Research`
+- top navigation: `Home / Research / Blog / Musings`
 - `Home`: profile content
 - `Blog`: post list and article pages
+- `Musings`: short-form notes and essays
 - `Research`: research overview
 - post URLs: `/blog/YYYY/MM/DD/slug/` (legacy-compatible)
 
@@ -33,8 +34,8 @@ npm run build
 
 ### Home and Research pages
 
-- Home body: `src/markdown/home.md`
-- Research body: `src/markdown/research.md`
+- Home body: `src/content/site/home.md`
+- Research body: `src/content/site/research.md`
 - Page wrappers:
 `src/pages/index.astro`, `src/pages/research/index.astro`
 
@@ -77,12 +78,13 @@ Pipeline outputs:
 
 ## Content guard and CI
 
-- `scripts/content_guard.py` validates:
+- `scripts/checks/content_guard.py` validates:
   - UTF-8 decode (strict)
   - malformed SVG blocks
   - legacy bad marker: `AUTO-GENERATED: scripts/blog_pipeline.py`
   - common encoding-corruption signals
-- `.github/workflows/blog-publish.yml` runs guard on blog/content changes.
+  - scans `blog`, `musings`, and `site` content collections
+- `.github/workflows/blog-publish.yml` runs guard on content changes.
 - `.github/workflows/deploy-astro.yml` runs guard before `npm run build`.
 
 ## Windows encoding safety
@@ -107,7 +109,7 @@ Avoid writing markdown with default encoding commands that do not specify UTF-8.
 - `.github/workflows/deploy-astro.yml`
   - validates content, builds Astro, deploys `dist/` to GitHub Pages.
 - `.github/workflows/blog-publish.yml`
-  - validates blog markdown and assets integrity.
+  - validates markdown content and assets integrity.
 - `.github/workflows/latex-publish.yml`
   - converts LaTeX to Astro content + PDF and commits generated artifacts.
 

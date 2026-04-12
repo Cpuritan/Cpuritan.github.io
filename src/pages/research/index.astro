@@ -1,10 +1,18 @@
 ---
+import { getEntry, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import ResearchContent from "../../markdown/research.md";
+
+const entry = await getEntry("site", "research");
+
+if (!entry) {
+  throw new Error("Missing site content entry: research");
+}
+
+const { Content } = await render(entry);
 ---
 
 <BaseLayout title="Research | Cpuritan" description="Research directions">
   <section>
-    <ResearchContent />
+    <Content />
   </section>
 </BaseLayout>

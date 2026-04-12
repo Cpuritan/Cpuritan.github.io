@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate blog markdown integrity before build/deploy."""
+"""Validate markdown content integrity before build/deploy."""
 
 from __future__ import annotations
 
@@ -9,8 +9,12 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List, Tuple
 
-ROOT = Path(__file__).resolve().parents[1]
-BLOG_DIR = ROOT / "src" / "content" / "blog"
+ROOT = Path(__file__).resolve().parents[2]
+CONTENT_DIRS = (
+    ROOT / "src" / "content" / "blog",
+    ROOT / "src" / "content" / "musings",
+    ROOT / "src" / "content" / "site",
+)
 
 FENCED_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~", re.MULTILINE)
 INLINE_CODE_RE = re.compile(r"`[^`\r\n]+`")
@@ -170,12 +174,25 @@ def inspect_file(path: Path) -> List[str]:
     return issues
 
 
+def collect_content_files() -> List[Path]:
+    missing = [path for path in CONTENT_DIRS if not path.exists()]
+    if missing:
+        joined = ", ".join(str(path) for path in missing)
+        raise ValueError(f"missing content dirs: {joined}")
+
+    files: List[Path] = []
+    for path in CONTENT_DIRS:
+        files.extend(sorted(path.glob("*.md")))
+    return files
+
+
 def main() -> int:
-    if not BLOG_DIR.exists():
-        print(f"[content-guard] ERROR: missing blog dir: {BLOG_DIR}", file=sys.stderr)
+    try:
+        files = collect_content_files()
+    except ValueError as exc:
+        print(f"[content-guard] ERROR: {exc}", file=sys.stderr)
         return 1
 
-    files = sorted(BLOG_DIR.glob("*.md"))
     if not files:
         print("[content-guard] ERROR: no markdown files found", file=sys.stderr)
         return 1
@@ -193,7 +210,7 @@ def main() -> int:
             print(f" - {issue}")
         return 1
 
-    print(f"[content-guard] OK ({len(files)} files)")
+    print(f"[content-guard] OK ({len(files)} files across {len(CONTENT_DIRS)} collections)")
     return 0
 
 
