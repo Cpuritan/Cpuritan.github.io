@@ -27,7 +27,6 @@ $$
 
 原始模型写为
 $$
-\boxed{
 \begin{aligned}
 \min_{x\in X,\ \rho\ge 0}\quad & \rho\\
 \text{s.t.}\quad
@@ -35,7 +34,7 @@ $$
 \Bigl\{
 \mathbb E_P[F(x,\tilde\xi)]-\rho\,W_1(P,\widehat P_N)
 \Bigr\}\le 0.
-\end{aligned}}
+\end{aligned}
 \tag{RS-W1}
 $$
 
@@ -118,7 +117,6 @@ $$
 
 模型 $(RS\text{-}W1)$ 等价于如下半无限规划：
 $$
-\boxed{
 \begin{aligned}
 \min_{x,\rho,\eta}\quad & \rho\\
 \text{s.t.}\quad
@@ -126,7 +124,7 @@ $$
 & \eta_i\ge c^\top x+Q(x,\xi)-Z-\rho\|\xi-\widehat\xi^{\,i}\|_1,
 \quad \forall \xi\in\Xi,\ \forall i=1,\dots,N,\\
 & x\in X,\ \rho\ge 0.
-\end{aligned}}
+\end{aligned}
 \tag{SIP}
 $$
 
@@ -154,7 +152,6 @@ $$
 
 在 $\Omega_i^k$ 上截断半无限约束，得到 CCG 的主问题：
 $$
-\boxed{
 \begin{aligned}
 \min_{x,\rho,\eta,\{y_i^\ell\}}\quad & \rho\\
 \text{s.t.}\quad
@@ -165,7 +162,7 @@ $$
 \quad y_i^\ell\ge 0,
 \quad \forall i,\ \forall \ell=1,\dots,L_i^k,\\
 & x\in X,\ \rho\ge 0.
-\end{aligned}}
+\end{aligned}
 \tag{MP_k}
 $$
 
@@ -229,7 +226,6 @@ Q(x,\xi)=\max_{\pi\in\Pi}\ \pi^\top(h+H\xi-Tx),
 $$
 因此，$(SP_i)$ 等价于
 $$
-\boxed{
 \begin{aligned}
 \Psi_i(x^k,\rho^k)=\ c^\top x^k-Z
 +\max_{\pi,\xi,u}\quad &
@@ -240,7 +236,7 @@ $$
 u\ge \widehat\xi^{\,i}-\xi,\quad
 u\ge 0,\\
 & \underline\xi\le \xi\le \overline\xi.
-\end{aligned}}
+\end{aligned}
 \tag{DSP_i}
 $$
 
