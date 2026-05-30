@@ -164,7 +164,7 @@ $$
 \quad \forall i,\ \forall \ell=1,\dots,L_i^k,\\
 & x\in X,\ \rho\ge 0
 \end{array}}
-\tag{MP_k}
+\tag{MP-k}
 $$
 
 #### 证明（命题 2）
@@ -195,7 +195,7 @@ $$
 \Bigl\{
 c^\top x^k+Q(x^k,\xi)-Z-\rho^k\|\xi-\widehat\xi^{\,i}\|_1
 \Bigr\}.}
-\tag{SP_i}
+\tag{SP-i}
 $$
 若
 $$
@@ -237,7 +237,7 @@ u\ge \widehat\xi^{\,i}-\xi,\quad
 u\ge 0,\\
 & \underline\xi\le \xi\le \overline\xi
 \end{array}}
-\tag{DSP_i}
+\tag{DSP-i}
 $$
 
 #### 证明（命题 4）
