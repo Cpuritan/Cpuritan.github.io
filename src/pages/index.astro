@@ -1,7 +1,6 @@
 ---
-import { getCollection, getEntry, render } from "astro:content";
+import { getEntry, render } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { formatDate } from "../utils/date";
 
 const entry = await getEntry("site", "home");
 
@@ -10,61 +9,10 @@ if (!entry) {
 }
 
 const { Content } = await render(entry);
-
-const oralSkillsPosts = (await getCollection("oralSkills"))
-  .filter(({ data }) => !data.draft)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .slice(0, 3);
-
-const buildOralSkillsUrl = (slug: string, date: Date): string => {
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `/oral-skills/${year}/${month}/${day}/${slug}/`;
-};
 ---
 
 <BaseLayout title="Home | Cpuritan" description="Qifeng Bao personal homepage">
   <section class="home-intro">
     <Content />
   </section>
-  {
-    oralSkillsPosts.length > 0 ? (
-      <section class="home-oral-skills">
-        <h2><a href="/oral-skills/">Oral Skills 🗣️</a></h2>
-        <div class="blog-grid">
-          {oralSkillsPosts.map((post) => (
-            <article class="blog-card">
-              <h2>
-                <a href={buildOralSkillsUrl(post.slug, post.data.date)}>{post.data.title}</a>
-              </h2>
-              <p class="meta">{formatDate(post.data.date)}</p>
-              {post.data.tags && post.data.tags.length > 0 ? (
-                <p class="tags">{post.data.tags.join(" / ")}</p>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </section>
-    ) : null
-  }
 </BaseLayout>
-
-<style>
-  .home-oral-skills {
-    max-width: 720px;
-    margin-top: 2.2rem;
-    padding-top: 1.6rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .home-oral-skills h2 {
-    margin: 0 0 0.9rem;
-    font-size: 1.25rem;
-  }
-
-  .home-oral-skills h2 a {
-    text-decoration: none;
-    color: var(--text);
-  }
-</style>
