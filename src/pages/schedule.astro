@@ -1,0 +1,569 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import schedule from "../data/schedule.json";
+
+// Format today's date for the "Today" button (Shanghai timezone)
+const today = new Date();
+const todayStr = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Shanghai",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).format(today);
+---
+
+<BaseLayout
+  title="Schedule | Cpuritan"
+  description="Qifeng Bao — calendar and schedule"
+>
+  <div class="sched-page" data-schedule={JSON.stringify(schedule)} data-today={todayStr}>
+    <header class="sched-toolbar">
+      <div class="sched-title">
+        <h1>Calendar</h1>
+        <span class="sched-sub" id="sched-sub"></span>
+      </div>
+      <div class="sched-controls">
+        <button type="button" class="sched-btn" id="prev-month" aria-label="上一月"><</button>
+        <button type="button" class="sched-btn sched-today" id="today-btn">今日</button>
+        <button type="button" class="sched-btn" id="next-month" aria-label="下一月">></button>
+      </div>
+    </header>
+
+    <div class="sched-grid">
+      <!-- Calendar -->
+      <section class="cal-panel" aria-label="月历视图">
+        <div class="cal-head">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+        </div>
+        <div class="cal-body" id="cal-body"></div>
+      </section>
+
+      <!-- Agenda -->
+      <section class="agenda-panel" aria-label="日程列表">
+        <div class="agenda-head">
+          <h2 id="agenda-title">今日日程</h2>
+          <span class="agenda-count" id="agenda-count"></span>
+        </div>
+        <ul class="agenda-list" id="agenda-list"></ul>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  :root {
+    --shad-bg: #ffffff;
+    --shad-text: #161616;
+    --shad-muted: #6b7280;
+    --shad-line: #d9d9d9;
+    --shad-pop: #1a73e8;
+    --shad-now: #ea4335;
+    --shad-tint: #e8f0fe;
+    --shad-card: #fafafa;
+    --shad-today-bg: #e8f0fe;
+    --shad-today-bd: #1a73e8;
+  }
+
+  .sched-page {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  .sched-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.4rem;
+  }
+
+  .sched-title h1 {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .sched-sub {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--shad-muted);
+    font-size: 0.95rem;
+  }
+
+  .sched-controls {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .sched-btn {
+    min-width: 2.4rem;
+    height: 2.4rem;
+    padding: 0 0.7rem;
+    border: 1px solid var(--shad-line);
+    border-radius: 8px;
+    background: var(--shad-bg);
+    color: var(--shad-text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+
+  .sched-btn:hover {
+    background: var(--shad-card);
+    border-color: #b8b8b8;
+  }
+
+  .sched-btn:active {
+    transform: translateY(1px);
+  }
+
+  .sched-today {
+    font-weight: 600;
+  }
+
+  /* Outlook-style two-column grid: calendar + agenda sidebar */
+  .sched-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.2rem;
+    align-items: flex-start;
+  }
+
+  /* ---------- Calendar ---------- */
+  .cal-panel {
+    border: 1px solid var(--shad-line);
+    border-radius: 10px;
+    background: var(--shad-bg);
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  .cal-head {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--shad-card);
+    border-bottom: 1px solid var(--shad-line);
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--shad-muted);
+    padding: 0.55rem 0;
+    letter-spacing: 0.04em;
+  }
+
+  .cal-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .cal-cell {
+    position: relative;
+    min-height: 88px;
+    padding: 0.4rem 0.45rem;
+    border-right: 1px solid var(--shad-line);
+    border-bottom: 1px solid var(--shad-line);
+    background: var(--shad-bg);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    overflow: hidden;
+    list-style: none;
+  }
+
+  .cal-cell:nth-child(7n) {
+    border-right: 0;
+  }
+
+  .cal-cell:hover {
+    background: var(--shad-card);
+  }
+
+  .cal-cell.outside {
+    background: #fbfbfb;
+    color: #b8b8b8;
+  }
+
+  .cal-cell.outside:hover {
+    background: #f4f4f4;
+  }
+
+  .cal-cell.weekend {
+    background: #fcfcfd;
+  }
+
+  .cal-cell.today {
+    background: var(--shad-today-bg);
+  }
+
+  .cal-cell.today .day-num {
+    background: var(--shad-today-bd);
+    color: #fff;
+    border-color: var(--shad-today-bd);
+  }
+
+  .cal-cell.has-events::after {
+    content: "";
+    position: absolute;
+    left: 0.45rem;
+    bottom: 0.35rem;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--shad-pop);
+  }
+
+  .cal-cell.selected:not(.today) {
+    box-shadow: inset 0 0 0 2px var(--shad-pop);
+  }
+
+  .day-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 999px;
+    font-size: 0.86rem;
+    color: var(--shad-text);
+    border: 1px solid transparent;
+  }
+
+  .chip {
+    font-size: 0.74rem;
+    color: var(--shad-pop);
+    background: var(--shad-tint);
+    border-radius: 4px;
+    padding: 0.04rem 0.32rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.45;
+  }
+
+  .chip.all-day {
+    color: var(--shad-now);
+    background: #fce8e6;
+  }
+
+  /* ---------- Agenda ---------- */
+  .agenda-panel {
+    border: 1px solid var(--shad-line);
+    border-radius: 10px;
+    background: var(--shad-bg);
+    padding: 0.9rem 0.95rem 0.4rem;
+    position: sticky;
+    top: 80px;
+    max-width: 100%;
+  }
+
+  .agenda-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--shad-line);
+    padding-bottom: 0.55rem;
+  }
+
+  .agenda-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .agenda-count {
+    color: var(--shad-muted);
+    font-size: 0.82rem;
+  }
+
+  .agenda-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .agenda-item {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 0.55rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--shad-line);
+  }
+
+  .agenda-item:last-child {
+    border-bottom: 0;
+  }
+
+  .agenda-time {
+    font-size: 0.82rem;
+    color: var(--shad-pop);
+    font-weight: 600;
+    padding-top: 0.1rem;
+  }
+
+  .agenda-time.all-day {
+    color: var(--shad-now);
+  }
+
+  .agenda-body {
+    min-width: 0;
+  }
+
+  .agenda-title-text {
+    font-size: 0.92rem;
+    color: var(--shad-text);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .agenda-loc {
+    margin-top: 0.12rem;
+    font-size: 0.8rem;
+    color: var(--shad-muted);
+  }
+
+  .agenda-empty {
+    padding: 1.2rem 0;
+    text-align: center;
+    color: var(--shad-muted);
+    font-size: 0.9rem;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 760px) {
+    .sched-grid {
+      grid-template-columns: 1fr;
+    }
+    .agenda-panel {
+      position: static;
+    }
+    .cal-cell {
+      min-height: 64px;
+      padding: 0.3rem 0.32rem;
+    }
+    .chip {
+      display: none;
+    }
+    .cal-cell.has-events::after {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  type ScheduleEntry = { time: string; title: string; location?: string };
+  type Schedule = Record<string, ScheduleEntry[]>;
+
+  const root = document.querySelector<HTMLElement>(".sched-page");
+  if (root) {
+    const schedule = JSON.parse(root.dataset.schedule || "{}") as Schedule;
+    const todayStr = root.dataset.today || "";
+
+    let viewYear = new Date().getFullYear();
+    let viewMonth = new Date().getMonth(); // 0-indexed
+    let selectedDate = todayStr;
+    let pendingRequest = 0; // guard against quick consecutive renders
+
+    const monthNames = [
+      "一月", "二月", "三月", "四月", "五月", "六月",
+      "七月", "八月", "九月", "十月", "十一月", "十二月"
+    ];
+    const dayNames = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+    const calBody = document.getElementById("cal-body")!;
+    const agendaList = document.getElementById("agenda-list")!;
+    const agendaCount = document.getElementById("agenda-count")!;
+    const agendaTitle = document.getElementById("agenda-title")!;
+    const schedSub = document.getElementById("sched-sub")!;
+
+    function pad(n: number): string {
+      return String(n).padStart(2, "0");
+    }
+
+    function dateKey(y: number, m: number, d: number): string {
+      return `${y}-${pad(m + 1)}-${pad(d)}`;
+    }
+
+    function escapeHtml(s: string): string {
+      const map: Record<string, string> = {};
+      map["&"] = "&amp;";
+      map["<"] = "&lt;";
+      map[">"] = "&gt;";
+      map['"'] = "&quot;";
+      map["'"] = "&#39;";
+      return s.replace(/[&<>"']/g, (c) => map[c]);
+    }
+
+    function eventsFor(dateKey: string): ScheduleEntry[] {
+      return schedule[dateKey] || [];
+    }
+
+    function renderCalendar() {
+      schedSub.textContent = `${viewYear} 年 ${monthNames[viewMonth]}`;
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      // Outlook shows Mon-Sun columns
+      const firstWeekday = (firstDay.getDay() + 6) % 7; // 0 = Mon
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+      // Leading days from previous month:
+      const totalLeading = firstWeekday;
+
+      let html = "";
+      const totalCells = Math.ceil((totalLeading + daysInMonth) / 7) * 7;
+
+      for (let i = 0; i < totalCells; i++) {
+        const cellIndex = i;
+        const dayNum = i - totalLeading + 1;
+        let cellClass = "cal-cell";
+        let cellDate = "";
+        let dayLabel = "";
+
+        if (i < totalLeading) {
+          const d = prevDays - totalLeading + i + 1;
+          const m = viewMonth === 0 ? 11 : viewMonth - 1;
+          const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+          cellDate = dateKey(y, m, d);
+          cellClass += " outside";
+          dayLabel = String(d);
+        } else if (i < totalLeading + daysInMonth) {
+          cellDate = dateKey(viewYear, viewMonth, dayNum);
+          dayLabel = String(dayNum);
+          const dow = new Date(viewYear, viewMonth, dayNum).getDay();
+          if (dow === 0 || dow === 6) cellClass += " weekend";
+          if (cellDate === todayStr) cellClass += " today";
+          if (cellDate === selectedDate) cellClass += " selected";
+          if (eventsFor(cellDate).length > 0) cellClass += " has-events";
+        } else {
+          const d = i - totalLeading - daysInMonth + 1;
+          const m = viewMonth === 11 ? 0 : viewMonth + 1;
+          const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+          cellDate = dateKey(y, m, d);
+          cellClass += " outside";
+          dayLabel = String(d);
+        }
+
+        const events = eventsFor(cellDate);
+        const chips = events.slice(0, 2).map((e) => {
+          const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
+          return `<span class="chip${allDay ? " all-day" : ""}">${escapeHtml(e.title)}</span>`;
+        }).join("");
+        const more = events.length > 2 ? `<span class="chip">+${events.length - 2}</span>` : "";
+
+        html += `<div class="${cellClass}" data-date="${cellDate}" data-i="${cellIndex}">
+          <span class="day-num">${dayLabel}</span>
+          ${chips}${more}
+        </div>`;
+      }
+
+      calBody.innerHTML = html;
+
+      calBody.querySelectorAll<HTMLElement>(".cal-cell").forEach((cell) => {
+        cell.addEventListener("click", () => {
+          selectedDate = cell.dataset.date || selectedDate;
+          // If click outside-current-month cell, navigate to that month
+          if (cell.classList.contains("outside")) {
+            const [y, m] = selectedDate.split("-").map(Number);
+            viewYear = y;
+            viewMonth = m - 1;
+            renderCalendar();
+          } else {
+            renderCalendar();
+          }
+          renderAgenda();
+        });
+      });
+    }
+
+    function renderAgenda() {
+      const events = eventsFor(selectedDate);
+      const [y, m, d] = selectedDate.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const isToday = selectedDate === todayStr;
+      const dow = dayNames[dateObj.getDay()];
+      agendaTitle.textContent = isToday
+        ? "今日日程"
+        : `${m} 月 ${d} 日 ${dow}`;
+      agendaCount.textContent = events.length ? `${events.length} 项` : "";
+
+      if (events.length === 0) {
+        agendaList.innerHTML = `<li class="agenda-empty">当天暂无日程安排</li>`;
+        return;
+      }
+
+      // Outlook agenda always shows all-day first, then time-sorted
+      events.sort((a, b) => {
+        const aa = a.time === "全天" ? "" : a.time;
+        const bb = b.time === "全天" ? "" : b.time;
+        return aa.localeCompare(bb);
+      });
+
+      agendaList.innerHTML = events.map((e) => {
+        const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
+        return `<li class="agenda-item">
+          <div class="agenda-time${allDay ? " all-day" : ""}">${escapeHtml(e.time)}</div>
+          <div class="agenda-body">
+            <div class="agenda-title-text">${escapeHtml(e.title)}</div>
+            ${e.location ? `<div class="agenda-loc">${escapeHtml(e.location)}</div>` : ""}
+          </div>
+        </li>`;
+      }).join("");
+    }
+
+    document.getElementById("prev-month")?.addEventListener("click", () => {
+      if (viewMonth === 0) {
+        viewMonth = 11;
+        viewYear--;
+      } else {
+        viewMonth--;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("next-month")?.addEventListener("click", () => {
+      if (viewMonth === 11) {
+        viewMonth = 0;
+        viewYear++;
+      } else {
+        viewMonth++;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("today-btn")?.addEventListener("click", () => {
+      const now = new Date();
+      viewYear = now.getFullYear();
+      viewMonth = now.getMonth();
+      selectedDate = todayStr;
+      renderCalendar();
+      renderAgenda();
+    });
+
+    // Keyboard navigation (Outlook-style)
+    document.addEventListener("keydown", (e) => {
+      if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+      const [y, m, d] = (selectedDate || todayStr).split("-").map(Number);
+      const cur = new Date(y, m - 1, d);
+      if (e.key === "ArrowLeft") cur.setDate(cur.getDate() - 1);
+      else if (e.key === "ArrowRight") cur.setDate(cur.getDate() + 1);
+      else if (e.key === "ArrowUp") cur.setDate(cur.getDate() - 7);
+      else if (e.key === "ArrowDown") cur.setDate(cur.getDate() + 7);
+      else return;
+      e.preventDefault();
+      selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+      if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
+        viewYear = cur.getFullYear();
+        viewMonth = cur.getMonth();
+      }
+      renderCalendar();
+      renderAgenda();
+    });
+
+    renderCalendar();
+    renderAgenda();
+    void pendingRequest; // reserved
+  }
+</script>
