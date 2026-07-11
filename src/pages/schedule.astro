@@ -2,8 +2,6 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import scheduleFallback from "../data/schedule.json";
 
-// Format today's date in Shanghai timezone so the date rollover logic
-// matches where the user actually is.
 const today = new Date();
 const todayStr = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Shanghai",
@@ -12,17 +10,20 @@ const todayStr = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 }).format(today);
 
-// Categories: key → {zh, color, tint, border}. These mirror the CSS classes
-// .cat-<key> and the entries' `category` field that the server stores.
-// Palette loosely follows Outlook's calendar color picker.
+// 5 categories: each with a distinct hue and saturation for the shade system
 const categories = [
-  { key: "meeting",  zh: "会议",   h: "210", c: "#1a73e8" },
-  { key: "study",    zh: "学习",   h: "262", c: "#7c4dff" },
-  { key: "deadline", zh: "截止",   h: "5",   c: "#ea4335" },
-  { key: "personal", zh: "个人",   h: "140", c: "#16a34a" },
-  { key: "social",   zh: "社交",   h: "30",  c: "#f59e0b" },
-  { key: "other",    zh: "其他",   h: "220", c: "#6b7280" },
+  { key: "research", zh: "科研", h: "215", s: "65" },
+  { key: "study",    zh: "学习", h: "270", s: "55" },
+  { key: "life",     zh: "生活", h: "145", s: "45" },
+  { key: "outing",   zh: "外出", h: "30",  s: "75" },
+  { key: "other",    zh: "其他", h: "0",   s: "0"  },
 ] as const;
+
+function baseColor(cat: string): string {
+  const c = categories.find((x) => x.key === cat);
+  if (!c) return "#6b7280";
+  return `hsl(${c.h}, ${c.s}%, 48%)`;
+}
 ---
 <BaseLayout
   title="Schedule | Cpuritan"
@@ -32,33 +33,40 @@ const categories = [
     class="sched-page"
     data-schedule={JSON.stringify(scheduleFallback)}
     data-today={todayStr}
-    data-api={import.meta.env.DEV ? "/api" : "/api"}
+    data-api="/api"
   >
+    <!-- ===== Toolbar ===== -->
     <header class="sched-toolbar">
       <div class="sched-title">
         <h1>Calendar</h1>
-        <span class="sched-sub" id="sched-sub"></span>
       </div>
-      <div class="sched-controls">
-        <button type="button" class="sched-btn" id="prev-month" aria-label="上一月"><</button>
-        <button type="button" class="sched-btn sched-today" id="today-btn">今日</button>
-        <button type="button" class="sched-btn" id="next-month" aria-label="下一月">></button>
-        <span class="sched-spacer" aria-hidden="true"></span>
-        <button type="button" class="sched-btn sched-login" id="login-btn" title="编辑日程（需登录）">⚙</button>
+      <div class="sched-actions">
+        <div class="tb-group">
+          <button type="button" class="tb-btn" id="prev-month" aria-label="上月">‹</button>
+          <span class="tb-label" id="month-label">2026 年 7 月</span>
+          <button type="button" class="tb-btn" id="next-month" aria-label="下月">›</button>
+        </div>
+        <button type="button" class="tb-btn tb-today" id="today-btn">今日</button>
+        <button type="button" class="tb-btn tb-login" id="login-btn" title="登录管理">⚙</button>
       </div>
     </header>
 
+    <!-- ===== Grid ===== -->
     <div class="sched-grid">
-      <section class="cal-panel" aria-label="月历视图">
+      <!-- Calendar -->
+      <section class="cal-panel" aria-label="月历">
         <div class="cal-head">
           <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
         </div>
         <div class="cal-body" id="cal-body"></div>
       </section>
 
+      <!-- Agenda -->
       <section class="agenda-panel" aria-label="日程列表">
         <div class="agenda-head">
+          <button type="button" class="day-btn" id="prev-day" aria-label="前一天">‹</button>
           <h2 id="agenda-title">今日日程</h2>
+          <button type="button" class="day-btn" id="next-day" aria-label="后一天">›</button>
           <span class="agenda-count" id="agenda-count"></span>
         </div>
         <ul class="agenda-list" id="agenda-list"></ul>
@@ -69,7 +77,7 @@ const categories = [
     </div>
   </div>
 
-  <!-- Login dialog -->
+  <!-- ===== Login dialog ===== -->
   <dialog class="dlg" id="login-dlg" aria-label="登录">
     <form method="dialog" class="dlg-form" id="login-form">
       <h3>登录以编辑日程</h3>
@@ -85,15 +93,39 @@ const categories = [
     </form>
   </dialog>
 
-  <!-- Edit dialog -->
+  <!-- ===== Edit dialog ===== -->
   <dialog class="dlg" id="edit-dlg" aria-label="编辑日程">
     <form method="dialog" class="dlg-form" id="edit-form">
       <h3 id="edit-title">新增日程</h3>
+
+      <!-- Mode tabs -->
+      <div class="mode-tabs" id="mode-tabs">
+        <button type="button" class="mode-tab is-active" data-mode="single">日程计划</button>
+        <button type="button" class="mode-tab" data-mode="period">周期规划</button>
+      </div>
+
       <input type="hidden" name="id" id="edit-id" />
-      <label class="dlg-field">
-        <span>日期</span>
-        <input type="date" name="date" id="edit-date" required />
-      </label>
+
+      <!-- Single-day fields -->
+      <div id="single-fields">
+        <label class="dlg-field">
+          <span>日期</span>
+          <input type="date" name="date" id="edit-date" required />
+        </label>
+      </div>
+
+      <!-- Period fields -->
+      <div id="period-fields" hidden>
+        <label class="dlg-field">
+          <span>开始日期</span>
+          <input type="date" id="edit-start-date" required />
+        </label>
+        <label class="dlg-field">
+          <span>结束日期</span>
+          <input type="date" id="edit-end-date" required />
+        </label>
+      </div>
+
       <label class="dlg-field">
         <span>时间</span>
         <input type="text" name="time" id="edit-time" placeholder="10:00 或 全天" required maxlength="32" />
@@ -102,15 +134,21 @@ const categories = [
         <span>标题</span>
         <input type="text" name="title" id="edit-title-input" required maxlength="200" />
       </label>
-      <label class="dlg-field">
-        <span>地点</span>
-        <input type="text" name="location" id="edit-location" maxlength="200" />
-      </label>
+
       <div class="dlg-field">
         <span>类别</span>
         <div class="cat-picker" id="cat-picker"></div>
-        <input type="hidden" name="category" id="edit-category" value="meeting" />
+        <input type="hidden" name="category" id="edit-category" value="research" />
       </div>
+
+      <label class="dlg-field dlg-color-row">
+        <span>颜色</span>
+        <span class="color-row-inner">
+          <input type="color" id="edit-color" value="#5b7fc7" />
+          <button type="button" class="ed-btn ghost" id="reset-color">重置为默认</button>
+        </span>
+      </label>
+
       <p class="dlg-error" id="edit-error" hidden></p>
       <div class="dlg-actions">
         <button type="button" class="ed-btn danger" id="edit-delete" hidden>删除</button>
@@ -128,718 +166,857 @@ const categories = [
 
 <style is:global>
   :root {
-    --shad-bg: #ffffff;
-    --shad-text: #161616;
-    --shad-muted: #6b7280;
-    --shad-line: #d9d9d9;
-    --shad-pop: #1a73e8;
-    --shad-now: #ea4335;
-    --shad-tint: #e8f0fe;
-    --shad-card: #fafafa;
-    --shad-today-bg: #e8f0fe;
-    --shad-today-bd: #1a73e8;
+    --st-bg: #ffffff;
+    --st-text: #161616;
+    --st-muted: #6b7280;
+    --st-line: #e8e8e8;
+    --st-pop: #2b6ed3;
+    --st-now: #e34432;
+    --st-tint: #eef3fc;
+    --st-card: #f7f8fa;
+    --st-today-bg: #eef3fc;
+    --st-today-bd: var(--st-pop);
+    --st-shadow: 0 2px 10px rgba(0,0,0,0.06);
   }
 
-  .sched-page {
-    max-width: 920px;
-    margin: 0 auto;
-  }
+  .sched-page { max-width: 920px; margin: 0 auto; }
 
+  /* ===== Toolbar ===== */
   .sched-toolbar {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem;
   }
-  .sched-title h1 { margin: 0; font-size: 2rem; line-height: 1.1; }
-  .sched-sub { display: block; margin-top: 0.25rem; color: var(--shad-muted); font-size: 0.95rem; }
+  .sched-title h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.01em; }
+  .sched-actions { display: flex; gap: 0.4rem; align-items: center; }
 
-  .sched-controls { display: flex; gap: 0.4rem; align-items: center; }
-  .sched-spacer { width: 0.5rem; }
-  .sched-btn {
-    min-width: 2.4rem; height: 2.4rem; padding: 0 0.7rem;
-    border: 1px solid var(--shad-line); border-radius: 8px;
-    background: var(--shad-bg); color: var(--shad-text);
-    font-family: inherit; font-size: 0.95rem; cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease;
+  .tb-group { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--st-line); border-radius: 10px; background: var(--st-bg); overflow: hidden; }
+  .tb-btn {
+    min-width: 2.2rem; height: 2.2rem; padding: 0 0.5rem;
+    border: none; background: transparent; color: var(--st-text);
+    font-family: inherit; font-size: 0.9rem; cursor: pointer;
+    transition: background 0.12s ease;
   }
-  .sched-btn:hover { background: var(--shad-card); border-color: #b8b8b8; }
-  .sched-btn:active { transform: translateY(1px); }
-  .sched-today { font-weight: 600; }
-  .sched-login { color: var(--shad-muted); }
-  .sched-login.is-authed { color: var(--shad-pop); border-color: var(--shad-pop); background: var(--shad-tint); }
+  .tb-btn:hover { background: var(--st-card); }
+  .tb-btn:active { transform: translateY(1px); }
+  .tb-label { padding: 0 0.6rem; font-size: 0.88rem; font-weight: 500; color: var(--st-text); white-space: nowrap; min-width: 6.5rem; text-align: center; }
+  .tb-today { font-weight: 600; color: var(--st-pop); border: 1px solid var(--st-line); border-radius: 10px; margin-left: 0.2rem; }
+  .tb-today:hover { background: var(--st-tint); }
+  .tb-login { color: var(--st-muted); border: 1px solid transparent; border-radius: 10px; }
+  .tb-login:hover { border-color: var(--st-line); background: var(--st-card); }
+  .tb-login.is-authed { color: var(--st-pop); border-color: var(--st-pop); background: var(--st-tint); }
 
+  /* ===== Grid ===== */
   .sched-grid {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 1.2rem;
-    align-items: flex-start;
+    display: grid; grid-template-columns: 1fr 300px; gap: 1.2rem; align-items: flex-start;
   }
 
-  /* ---------- Calendar ---------- */
+  /* ===== Calendar ===== */
   .cal-panel {
-    border: 1px solid var(--shad-line);
-    border-radius: 10px;
-    background: var(--shad-bg);
-    overflow: hidden;
-    max-width: 100%;
+    border: 1px solid var(--st-line); border-radius: 12px; background: var(--st-bg);
+    overflow: hidden; max-width: 100%; box-shadow: var(--st-shadow);
   }
   .cal-head {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background: var(--shad-card);
-    border-bottom: 1px solid var(--shad-line);
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--shad-muted);
-    padding: 0.55rem 0;
-    letter-spacing: 0.04em;
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    background: var(--st-card); border-bottom: 1px solid var(--st-line);
+    text-align: center; font-size: 0.78rem; font-weight: 500; color: var(--st-muted);
+    padding: 0.6rem 0; letter-spacing: 0.04em;
   }
-  .cal-body {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-  }
+  .cal-body { display: grid; grid-template-columns: repeat(7, 1fr); }
   .cal-cell {
-    position: relative;
-    min-height: 92px;
-    padding: 0.4rem 0.45rem;
-    border-right: 1px solid var(--shad-line);
-    border-bottom: 1px solid var(--shad-line);
-    background: var(--shad-bg);
-    cursor: pointer;
-    transition: background 0.1s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 0.18rem;
-    overflow: hidden;
-    list-style: none;
+    position: relative; min-height: 88px; padding: 0.4rem 0.35rem;
+    border-right: 1px solid #f2f2f2; border-bottom: 1px solid #f2f2f2;
+    background: var(--st-bg); cursor: pointer; transition: background 0.1s ease;
+    display: flex; flex-direction: column; gap: 0.15rem;
   }
   .cal-cell:nth-child(7n) { border-right: 0; }
-  .cal-cell:hover { background: var(--shad-card); }
-  .cal-cell.outside { background: #fbfbfb; color: #b8b8b8; }
-  .cal-cell.outside:hover { background: #f4f4f4; }
-  .cal-cell.weekend { background: #fcfcfd; }
-  .cal-cell.today { background: var(--shad-today-bg); }
+  .cal-cell:hover { background: var(--st-card); }
+  .cal-cell.outside { opacity: 0.4; }
+  .cal-cell.outside:hover { opacity: 0.6; }
+  .cal-cell.weekend .day-num { color: var(--st-muted); }
+  .cal-cell.today { background: #f8faff; }
   .cal-cell.today .day-num {
-    background: var(--shad-today-bd); color: #fff; border-color: var(--shad-today-bd);
+    background: var(--st-today-bd); color: #fff; width: 1.6rem; height: 1.6rem;
+    box-shadow: 0 1px 4px rgba(43,110,211,0.25);
   }
-  .cal-cell.selected:not(.today) { box-shadow: inset 0 0 0 2px var(--shad-pop); }
+  .cal-cell.selected { background: #f4f7fd; }
+  .cal-cell.selected .day-num {
+    box-shadow: 0 0 0 2px var(--st-pop);
+    color: var(--st-pop);
+  }
+  .cal-cell.today.selected .day-num {
+    box-shadow: 0 0 0 2px var(--st-pop);
+    background: var(--st-today-bd); color: #fff;
+  }
+
   .day-num {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 1.55rem; height: 1.55rem; border-radius: 999px;
-    font-size: 0.86rem; color: var(--shad-text);
-    border: 1px solid transparent;
-  }
-  .chip {
-    font-size: 0.72rem;
-    color: var(--chip-c, var(--shad-pop));
-    background: var(--chip-t, var(--shad-tint));
-    border-left: 3px solid var(--chip-cb, var(--shad-pop));
-    border-radius: 4px;
-    padding: 0.04rem 0.32rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.45;
-  }
-  /* default (no category) = all-day red treatment, classic look */
-  .chip.all-day {
-    --chip-c: var(--shad-now);
-    --chip-t: #fce8e6;
-    --chip-cb: var(--shad-now);
+    width: 1.55rem; height: 1.55rem; border-radius: 8px;
+    font-size: 0.82rem; font-weight: 500; color: var(--st-text);
+    transition: all 0.12s ease; margin-bottom: 0.1rem;
   }
 
-  /* ---------- Agenda ---------- */
+  .chip {
+    font-size: 0.71rem;
+    color: var(--chip-c, var(--st-pop));
+    background: var(--chip-t, var(--st-tint));
+    border-left: 3px solid var(--chip-cb, var(--st-pop));
+    border-radius: 3px;
+    padding: 0.03rem 0.3rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.45; font-weight: 500;
+  }
+
+  /* ===== Agenda ===== */
   .agenda-panel {
-    border: 1px solid var(--shad-line);
-    border-radius: 10px;
-    background: var(--shad-bg);
-    padding: 0.9rem 0.95rem 0.6rem;
-    position: sticky;
-    top: 80px;
-    max-width: 100%;
+    border: 1px solid var(--st-line); border-radius: 12px; background: var(--st-bg);
+    padding: 0 0 0.6rem; position: sticky; top: 80px;
+    max-width: 100%; box-shadow: var(--st-shadow);
   }
   .agenda-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 0.5rem; margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--shad-line); padding-bottom: 0.55rem;
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.65rem 0.7rem 0.55rem;
+    border-bottom: 1px solid var(--st-line);
   }
-  .agenda-head h2 { margin: 0; font-size: 1.05rem; }
-  .agenda-count { color: var(--shad-muted); font-size: 0.82rem; }
+  .agenda-head h2 { margin: 0; font-size: 0.95rem; flex: 1; text-align: center; }
+  .agenda-count { color: var(--st-muted); font-size: 0.78rem; white-space: nowrap; }
+
+  .day-btn {
+    border: none; background: transparent; color: var(--st-muted);
+    cursor: pointer; font-size: 1rem; padding: 0.15rem 0.25rem; line-height: 1;
+    border-radius: 6px; transition: all 0.1s ease;
+  }
+  .day-btn:hover { background: var(--st-card); color: var(--st-text); }
+
   .agenda-list { list-style: none; margin: 0; padding: 0; }
   .agenda-item {
-    display: grid;
-    grid-template-columns: 4px 60px 1fr auto;
-    gap: 0.55rem;
-    padding: 0.55rem 0;
-    border-bottom: 1px solid var(--shad-line);
-    align-items: start;
+    display: grid; grid-template-columns: 4px 56px 1fr auto;
+    gap: 0.5rem; padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid #f2f2f2; align-items: start;
+    cursor: default;
   }
   .agenda-item:last-child { border-bottom: 0; }
-  .agenda-bar { width: 4px; border-radius: 2px; align-self: stretch; background: var(--shad-pop); }
-  .agenda-time { font-size: 0.82rem; color: var(--shad-pop); font-weight: 600; padding-top: 0.1rem; }
-  .agenda-time.all-day { color: var(--shad-now); }
+  .agenda-bar { width: 4px; border-radius: 2px; align-self: stretch; background: var(--bar, var(--st-pop)); flex-shrink: 0; }
+  .agenda-time { font-size: 0.8rem; color: var(--st-pop); font-weight: 600; padding-top: 0.08rem; }
+  .agenda-time.all-day { color: var(--st-now); }
   .agenda-body { min-width: 0; }
-  .agenda-title-text { font-size: 0.92rem; color: var(--shad-text); line-height: 1.35; overflow-wrap: anywhere; }
-  .agenda-loc { margin-top: 0.12rem; font-size: 0.8rem; color: var(--shad-muted); }
-  .agenda-empty { padding: 1.2rem 0; text-align: center; color: var(--shad-muted); font-size: 0.9rem; }
-  .agenda-edit-actions { margin-top: 0.5rem; display: flex; gap: 0.4rem; }
+  .agenda-title-text { font-size: 0.9rem; color: var(--st-text); line-height: 1.35; overflow-wrap: anywhere; }
+  .agenda-loc { margin-top: 0.1rem; font-size: 0.78rem; color: var(--st-muted); }
+  .agenda-empty { padding: 1.2rem 0.7rem; text-align: center; color: var(--st-muted); font-size: 0.85rem; }
+  .agenda-edit-actions { margin: 0.4rem 0.7rem 0; }
 
-  /* ---------- Edit buttons ---------- */
+  /* ===== Edit buttons ===== */
   .ed-btn {
-    border: 1px solid var(--shad-line); background: var(--shad-bg);
-    color: var(--shad-text); border-radius: 8px; padding: 0.4rem 0.8rem;
-    font-family: inherit; font-size: 0.88rem; cursor: pointer;
-    transition: background 0.12s ease, border-color 0.12s ease;
+    border: 1px solid var(--st-line); background: var(--st-bg);
+    color: var(--st-text); border-radius: 8px; padding: 0.35rem 0.7rem;
+    font-family: inherit; font-size: 0.85rem; cursor: pointer;
+    transition: all 0.12s ease;
   }
-  .ed-btn:hover { background: var(--shad-card); border-color: #b8b8b8; }
-  .ed-btn.primary { background: var(--shad-pop); color: #fff; border-color: var(--shad-pop); }
-  .ed-btn.primary:hover { background: #1558b3; }
-  .ed-btn.ghost { background: transparent; color: var(--shad-muted); }
-  .ed-btn.danger { color: var(--shad-now); border-color: #f3c8c4; }
+  .ed-btn:hover { background: var(--st-card); border-color: #d0d0d0; }
+  .ed-btn.primary { background: var(--st-pop); color: #fff; border-color: var(--st-pop); }
+  .ed-btn.primary:hover { background: #1f5bb5; }
+  .ed-btn.ghost { background: transparent; border-color: transparent; color: var(--st-muted); }
+  .ed-btn.ghost:hover { color: var(--st-text); background: var(--st-card); border-color: var(--st-line); }
+  .ed-btn.danger { color: var(--st-now); border-color: #f5d0cc; }
   .ed-btn.danger:hover { background: #fce8e6; }
   .ed-add { width: 100%; }
 
   .ed-icon-btn {
-    border: none; background: transparent; color: var(--shad-muted);
-    cursor: pointer; font-size: 0.95rem; padding: 0 0.2rem;
-    border-radius: 4px; line-height: 1.4;
+    border: none; background: transparent; color: #bbb; cursor: pointer;
+    font-size: 0.9rem; padding: 0 0.15rem; border-radius: 4px; line-height: 1.4;
+    transition: color 0.1s;
   }
-  .ed-icon-btn:hover { background: var(--shad-card); color: var(--shad-text); }
-  body:not(.is-admin) .ed-icon-btn { display: none; }
+  .ed-icon-btn:hover { color: var(--st-text); }
+  body:not(.is-admin) .ed-icons { display: none; }
 
-  /* ---------- Dialogs ---------- */
+  /* ===== Dialogs ===== */
   .dlg {
-    border: 1px solid var(--shad-line);
-    border-radius: 12px;
-    padding: 0;
-    width: min(420px, 92vw);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-    color: var(--shad-text);
+    border: 1px solid var(--st-line); border-radius: 14px; padding: 0;
+    width: min(400px, 92vw); box-shadow: 0 16px 40px rgba(0,0,0,0.16); color: var(--st-text);
   }
-  .dlg::backdrop { background: rgba(0, 0, 0, 0.32); }
-  .dlg-form { padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; }
-  .dlg-form h3 { margin: 0 0 0.2rem; font-size: 1.05rem; }
-  .dlg-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--shad-muted); }
+  .dlg::backdrop { background: rgba(0,0,0,0.3); }
+  .dlg-form { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .dlg-form h3 { margin: 0 0 0.1rem; font-size: 1rem; }
+  .dlg-field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.82rem; color: var(--st-muted); }
   .dlg-field input[type="text"],
   .dlg-field input[type="password"],
   .dlg-field input[type="date"] {
-    border: 1px solid var(--shad-line); border-radius: 8px; padding: 0.45rem 0.55rem;
-    font-family: inherit; font-size: 0.95rem; color: var(--shad-text);
+    border: 1px solid var(--st-line); border-radius: 8px; padding: 0.4rem 0.5rem;
+    font-family: inherit; font-size: 0.92rem; color: var(--st-text);
   }
-  .dlg-field input:focus { outline: 2px solid var(--shad-pop); outline-offset: -1px; border-color: var(--shad-pop); }
-  .dlg-error { margin: 0; color: var(--shad-now); font-size: 0.85rem; }
-  .dlg-actions { display: flex; gap: 0.4rem; align-items: center; justify-content: flex-end; margin-top: 0.2rem; }
+  .dlg-field input:focus { outline: 2px solid var(--st-pop); outline-offset: -1px; border-color: var(--st-pop); }
+  .dlg-error { margin: 0; color: var(--st-now); font-size: 0.82rem; }
+  .dlg-actions { display: flex; gap: 0.4rem; align-items: center; justify-content: flex-end; margin-top: 0.1rem; }
   .dlg-spacer { flex: 1; }
 
-  /* ---------- Category picker ---------- */
-  .cat-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  .cat-swatch {
-    border: 1px solid var(--shad-line); background: var(--shad-bg);
-    border-radius: 999px; padding: 0.22rem 0.6rem; font-size: 0.82rem;
-    cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;
-    color: var(--shad-text);
-  }
-  .cat-swatch .dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--c, #ccc); display: inline-block; }
-  .cat-swatch.is-active { border-color: var(--c); background: var(--t, var(--shad-card)); }
+  .dlg-color-row { flex-direction: row; align-items: center; gap: 0.5rem; }
+  .dlg-color-row > span { min-width: 3.5rem; }
+  .color-row-inner { display: flex; align-items: center; gap: 0.4rem; }
+  .color-row-inner input[type="color"] { width: 2rem; height: 2rem; padding: 0; border: 1px solid var(--st-line); border-radius: 8px; cursor: pointer; }
 
-  /* ---------- Responsive ---------- */
+  /* ===== Mode tabs ===== */
+  .mode-tabs { display: flex; border: 1px solid var(--st-line); border-radius: 10px; overflow: hidden; }
+  .mode-tab {
+    flex: 1; border: none; background: var(--st-bg); color: var(--st-muted);
+    padding: 0.4rem 0; font-family: inherit; font-size: 0.82rem; cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .mode-tab.is-active { background: var(--st-pop); color: #fff; font-weight: 500; }
+  .mode-tab:hover:not(.is-active) { background: var(--st-card); }
+
+  /* ===== Category picker ===== */
+  .cat-picker { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .cat-swatch {
+    border: 1px solid var(--st-line); background: var(--st-bg);
+    border-radius: 999px; padding: 0.18rem 0.5rem; font-size: 0.8rem;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;
+    color: var(--st-text); transition: all 0.1s ease;
+  }
+  .cat-swatch .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--c, #ccc); display: inline-block; flex-shrink: 0; }
+  .cat-swatch.is-active { border-color: var(--c); background: var(--t, var(--st-card)); font-weight: 500; }
+
   @media (max-width: 760px) {
     .sched-grid { grid-template-columns: 1fr; }
     .agenda-panel { position: static; }
-    .cal-cell { min-height: 64px; padding: 0.3rem 0.32rem; }
+    .cal-cell { min-height: 60px; padding: 0.25rem 0.25rem; }
     .chip { display: none; }
   }
 </style>
 
 <script>
+  // ---------------------------------------------------------------------------
+  // Types
+  // ---------------------------------------------------------------------------
   type ScheduleEntry = {
-    id?: string;
-    time: string;
-    title: string;
-    location?: string;
-    category?: string; // key into CATEGORIES, default "meeting"
+    id?: string; time: string; title: string; category?: string;
+    color?: string; // hex override, e.g. "#ff6600"
   };
   type Schedule = Record<string, ScheduleEntry[]>;
 
-  const CATEGORIES: Array<{ key: string; zh: string; c: string; t: string; cb: string }> =
-    (window as any).__SCHEDULE_CATEGORIES__?.map((c: any) => ({
-      ...c,
-      t: `${c.c}1a`, // 10% tint placeholder, overridden by CSS below
-      cb: c.c,
-    })) ?? [];
+  const CATS: Array<{ key: string; zh: string; h: string; s: string }> =
+    (window as any).__SCHEDULE_CATEGORIES__ ?? [];
 
-  // CSS variables for each chip color: lookup by --cat-<key>-c / -t
-  function catVars(cat: string | undefined): string {
-    const k = cat || "meeting";
-    return `--chip-c: var(--cat-${k}-c, var(--shad-pop)); --chip-t: var(--cat-${k}-t, var(--shad-tint)); --chip-cb: var(--cat-${k}-cb, var(--shad-pop));`;
+  // Per-category hsl shades (lightness offsets). 4 levels per category.
+  const SHADES = [
+    { bgL: 95, fgL: 38, bdL: 65 },   // level 0 — lightest
+    { bgL: 91, fgL: 44, bdL: 59 },   // level 1
+    { bgL: 87, fgL: 50, bdL: 53 },   // level 2
+    { bgL: 83, fgL: 56, bdL: 47 },   // level 3 — darkest
+  ];
+
+  const DEFAULT_TODAY = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+  function pad(n: number): string { return String(n).padStart(2, "0"); }
+  function dateKey(y: number, m: number, d: number): string {
+    return `${y}-${pad(m + 1)}-${pad(d)}`;
+  }
+  function escapeHtml(s: string): string {
+    return s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+  }
+  function genId(): string {
+    return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  function parseDate(str: string): { y: number; m: number; d: number } {
+    const [y, m, d] = str.split("-").map(Number);
+    return { y, m: m - 1, d };
   }
 
+  /** Compute HSL chip colours for a cat+shadeIndex combo. */
+  function chipColors(cat: string | undefined, shade: number): string {
+    const c = CATS.find((x) => x.key === (cat || "other"));
+    if (!c) return `--chip-c:#555;--chip-t:#eee;--chip-cb:#555;--bar:#555;`;
+    const s = SHADES[shade % SHADES.length];
+    const fg = `hsl(${c.h}, ${c.s}%, ${s.fgL}%)`;
+    const bg = `hsl(${c.h}, ${c.s}%, ${s.bgL}%)`;
+    const bd = `hsl(${c.h}, ${c.s}%, ${s.bdL}%)`;
+    return `--chip-c:${fg};--chip-t:${bg};--chip-cb:${bd};--bar:${fg};`;
+  }
+
+  /** Get the base hex colour for a category (used as <input type=color> default). */
+  function baseHex(cat: string): string {
+    const c = CATS.find((x) => x.key === (cat || "other"));
+    if (!c) return "#6b7280";
+    // convert hsl(215,65%,48%) to hex approximation
+    const vals: Record<string, string> = {
+      research: "#3b7dd8", study: "#7c4dff", life: "#3ba366",
+      outing: "#e8913a", other: "#6b7280",
+    };
+    return vals[c.key] ?? "#6b7280";
+  }
+
+  /** Return all dates from start to end (inclusive). */
+  function dateRange(start: string, end: string): string[] {
+    const a = new Date(parseDate(start).y, parseDate(start).m, parseDate(start).d);
+    const b = new Date(parseDate(end).y, parseDate(end).m, parseDate(end).d);
+    const out: string[] = [];
+    for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) {
+      out.push(dateKey(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
   const root = document.querySelector<HTMLElement>(".sched-page")!;
-  if (root) {
-    // Inline the per-category CSS so the page has all six palettes baked in.
-    // Inject a <style> tag once.
-    const styleEl = document.createElement("style");
-    let css = "";
-    const palette = [
-      { key: "meeting",  c: "#1a73e8", t: "#e8f0fe" },
-      { key: "study",    c: "#7c4dff", t: "#efe7ff" },
-      { key: "deadline", c: "#ea4335", t: "#fce8e6" },
-      { key: "personal", c: "#16a34a", t: "#e6f7ec" },
-      { key: "social",   c: "#f59e0b", t: "#fef3e0" },
-      { key: "other",    c: "#6b7280", t: "#f1f3f5" },
-    ];
-    for (const p of palette) {
-      css += `:root{--cat-${p.key}-c:${p.c};--cat-${p.key}-t:${p.t};--cat-${p.key}-cb:${p.c};}`;
-      css += `.cat-${p.key}{--chip-c:${p.c};--chip-t:${p.t};--chip-cb:${p.c};--bar:${p.c};}`;
-    }
-    // agenda bar uses --bar, default fallback shad-pop
-    css += `.agenda-bar{background:var(--bar,var(--shad-pop));}`;
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-    void catVars;
+  if (!root) throw new Error("no .sched-page");
 
-    const apiBase = root.dataset.api || "/api";
-    let schedule = JSON.parse(root.dataset.schedule || "{}") as Schedule;
-    let todayStr = root.dataset.today || todayStringShanghai();
+  let schedule = JSON.parse(root.dataset.schedule || "{}") as Schedule;
+  let todayStr = DEFAULT_TODAY;
 
-    let viewYear = new Date().getFullYear();
-    let viewMonth = new Date().getMonth();
-    let selectedDate = todayStr;
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth();
+  let selectedDate = DEFAULT_TODAY;
 
-    let isAuthed = false;
+  let isAuthed = false;
 
-    const monthNames = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
-    const dayNames = ["周日","周一","周二","周三","周四","周五","周六"];
+  // Refs
+  const monthLabel = document.getElementById("month-label")!;
+  const calBody = document.getElementById("cal-body")!;
+  const agendaList = document.getElementById("agenda-list")!;
+  const agendaCount = document.getElementById("agenda-count")!;
+  const agendaTitle = document.getElementById("agenda-title")!;
+  const editActions = document.getElementById("agenda-edit-actions")!;
+  const loginBtn = document.getElementById("login-btn")!;
 
-    const calBody = document.getElementById("cal-body")!;
-    const agendaList = document.getElementById("agenda-list")!;
-    const agendaCount = document.getElementById("agenda-count")!;
-    const agendaTitle = document.getElementById("agenda-title")!;
-    const schedSub = document.getElementById("sched-sub")!;
-    const editActions = document.getElementById("agenda-edit-actions")!;
-    const loginBtn = document.getElementById("login-btn")!;
+  const apiBase = root.dataset.api || "/api";
+  const monthNames = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
+  const dayNames = ["周日","周一","周二","周三","周四","周五","周六"];
 
-    // ---------- date helpers ----------
-    function pad(n: number): string { return String(n).padStart(2, "0"); }
-    function dateKey(y: number, m: number, d: number): string { return `${y}-${pad(m+1)}-${pad(d)}`; }
+  function eventsFor(d: string): ScheduleEntry[] { return schedule[d] || []; }
 
-    /** Today's YYYY-MM-DD in Asia/Shanghai. Rounded to date-only. */
-    function todayStringShanghai(): string {
-      return new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(new Date());
-    }
+  // ---------------------------------------------------------------------------
+  // Calendar rendering
+  // ---------------------------------------------------------------------------
+  function renderCalendar() {
+    monthLabel.textContent = `${viewYear} 年 ${monthNames[viewMonth]}`;
 
-    function escapeHtml(s: string): string {
-      return s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
-    }
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    const firstWeekday = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+    const totalLeading = firstWeekday;
+    const totalCells = Math.ceil((totalLeading + daysInMonth) / 7) * 7;
 
-    function genId(): string {
-      return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-    }
+    const dayEvents = new Map<string, ScheduleEntry[]>();
+    const catCounts = new Map<string, Map<string, number>>(); // cellDate→cat→count
 
-    function eventsFor(d: string): ScheduleEntry[] { return schedule[d] || []; }
+    let html = "";
+    for (let i = 0; i < totalCells; i++) {
+      const dayNum = i - totalLeading + 1;
+      let cellClass = "cal-cell";
+      let cellDate = "";
+      let dayLabel = "";
 
-    // ---------- render ----------
-    function renderCalendar() {
-      schedSub.textContent = `${viewYear} 年 ${monthNames[viewMonth]}`;
-      const firstDay = new Date(viewYear, viewMonth, 1);
-      const firstWeekday = (firstDay.getDay() + 6) % 7;
-      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-      const prevDays = new Date(viewYear, viewMonth, 0).getDate();
-      const totalLeading = firstWeekday;
-      const totalCells = Math.ceil((totalLeading + daysInMonth) / 7) * 7;
+      if (i < totalLeading) {
+        const d = prevDays - totalLeading + i + 1;
+        const m = viewMonth === 0 ? 11 : viewMonth - 1;
+        const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+        cellDate = dateKey(y, m, d);
+        cellClass += " outside"; dayLabel = String(d);
+      } else if (i < totalLeading + daysInMonth) {
+        cellDate = dateKey(viewYear, viewMonth, dayNum);
+        dayLabel = String(dayNum);
+        const dow = new Date(viewYear, viewMonth, dayNum).getDay();
+        if (dow === 0 || dow === 6) cellClass += " weekend";
+        if (cellDate === todayStr) cellClass += " today";
+        if (cellDate === selectedDate) cellClass += " selected";
+        if (eventsFor(cellDate).length > 0) cellClass += " has-events";
+      } else {
+        const d = i - totalLeading - daysInMonth + 1;
+        const m = viewMonth === 11 ? 0 : viewMonth + 1;
+        const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+        cellDate = dateKey(y, m, d);
+        cellClass += " outside"; dayLabel = String(d);
+      }
 
-      let html = "";
-      for (let i = 0; i < totalCells; i++) {
-        const dayNum = i - totalLeading + 1;
-        let cellClass = "cal-cell";
-        let cellDate = "";
-        let dayLabel = "";
-        if (i < totalLeading) {
-          const d = prevDays - totalLeading + i + 1;
-          const m = viewMonth === 0 ? 11 : viewMonth - 1;
-          const y = viewMonth === 0 ? viewYear - 1 : viewYear;
-          cellDate = dateKey(y, m, d);
-          cellClass += " outside"; dayLabel = String(d);
-        } else if (i < totalLeading + daysInMonth) {
-          cellDate = dateKey(viewYear, viewMonth, dayNum);
-          dayLabel = String(dayNum);
-          const dow = new Date(viewYear, viewMonth, dayNum).getDay();
-          if (dow === 0 || dow === 6) cellClass += " weekend";
-          if (cellDate === todayStr) cellClass += " today";
-          if (cellDate === selectedDate) cellClass += " selected";
-          if (eventsFor(cellDate).length > 0) cellClass += " has-events";
-        } else {
-          const d = i - totalLeading - daysInMonth + 1;
-          const m = viewMonth === 11 ? 0 : viewMonth + 1;
-          const y = viewMonth === 11 ? viewYear + 1 : viewYear;
-          cellDate = dateKey(y, m, d);
-          cellClass += " outside"; dayLabel = String(d);
-        }
-        const events = eventsFor(cellDate);
-        const chips = events.slice(0, 2).map((e) => {
+      const evts = eventsFor(cellDate);
+      dayEvents.set(cellDate, evts);
+
+      // Group by category, assign shade indices
+      const catGroup = new Map<string, ScheduleEntry[]>();
+      for (const e of evts) {
+        const k = e.category || "other";
+        if (!catGroup.has(k)) catGroup.set(k, []);
+        catGroup.get(k)!.push(e);
+      }
+
+      // Compute per-category occurrence count for this day (for shade index)
+      const cc = new Map<string, number>();
+      for (const [cat, items] of catGroup) {
+        cc.set(cat, items.length);
+      }
+      catCounts.set(cellDate, cc);
+
+      // Build chips: up to 2, with shade variation
+      const chipsHtml: string[] = [];
+      for (const [cat, items] of catGroup) {
+        items.forEach((e, idx) => {
+          if (chipsHtml.length >= 2) return;
+          const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
+          const shade = customColor ? 0 : idx; // custom color = always same shade
           const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
-          const cls = `chip ${allDay ? "all-day" : ""} cat-${e.category || "meeting"}`;
-          return `<span class="${cls.trim()}" style="${catVars(e.category)}">${escapeHtml(e.title)}</span>`;
-        }).join("");
-        const more = events.length > 2 ? `<span class="chip" style="${catVars("other")}">+${events.length - 2}</span>` : "";
-        html += `<div class="${cellClass}" data-date="${cellDate}" data-i="${i}">
-          <span class="day-num">${dayLabel}</span>
-          ${chips}${more}
-        </div>`;
-      }
-      calBody.innerHTML = html;
-      calBody.querySelectorAll<HTMLElement>(".cal-cell").forEach((cell) => {
-        cell.addEventListener("click", () => {
-          selectedDate = cell.dataset.date || selectedDate;
-          if (cell.classList.contains("outside")) {
-            const [y, m] = selectedDate.split("-").map(Number);
-            viewYear = y; viewMonth = m - 1;
-          }
-          renderCalendar();
-          renderAgenda();
+          const style = customColor
+            ? `--chip-c:${e.color};--chip-t:${e.color}22;--chip-cb:${e.color};`
+            : chipColors(cat, shade);
+          const cls = "chip" + (allDay && e.category === "other" ? " all-day" : "");
+          chipsHtml.push(`<span class="${cls}" style="${style}">${escapeHtml(e.title)}</span>`);
         });
-      });
+      }
+      const more = evts.length > 2
+        ? `<span class="chip" style="${chipColors("other", 0)}">+${evts.length - 2}</span>`
+        : "";
+
+      html += `<div class="${cellClass}" data-date="${cellDate}">
+        <span class="day-num">${dayLabel}</span>
+        ${chipsHtml.join("")}${more}
+      </div>`;
     }
 
-    function renderAgenda() {
-      const events = eventsFor(selectedDate);
-      const [y, m, d] = selectedDate.split("-").map(Number);
-      const dateObj = new Date(y, m - 1, d);
-      const isToday = selectedDate === todayStr;
-      const dow = dayNames[dateObj.getDay()];
-      agendaTitle.textContent = isToday ? "今日日程" : `${m} 月 ${d} 日 ${dow}`;
-      agendaCount.textContent = events.length ? `${events.length} 项` : "";
-
-      if (events.length === 0) {
-        agendaList.innerHTML = `<li class="agenda-empty">当天暂无日程安排</li>`;
-      } else {
-        const sorted = [...events].sort((a, b) => {
-          const aa = a.time === "全天" ? "" : a.time;
-          const bb = b.time === "全天" ? "" : b.time;
-          return aa.localeCompare(bb);
-        });
-        agendaList.innerHTML = sorted.map((e) => {
-          const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
-          const cat = e.category || "meeting";
-          return `<li class="agenda-item" data-id="${e.id || ""}">
-            <div class="agenda-bar cat-${cat}"></div>
-            <div class="agenda-time${allDay ? " all-day" : ""}">${escapeHtml(e.time)}</div>
-            <div class="agenda-body">
-              <div class="agenda-title-text">${escapeHtml(e.title)}</div>
-              ${e.location ? `<div class="agenda-loc">${escapeHtml(e.location)}</div>` : ""}
-            </div>
-            <div class="ed-icons">
-              <button class="ed-icon-btn" data-act="edit" title="编辑">✎</button>
-              <button class="ed-icon-btn" data-act="del" title="删除">✕</button>
-            </div>
-          </li>`;
-        }).join("");
-        wireAgendaActions();
-      }
-    }
-
-    function wireAgendaActions() {
-      agendaList.querySelectorAll<HTMLElement>(".agenda-item").forEach((li) => {
-        li.querySelectorAll<HTMLButtonElement>(".ed-icon-btn").forEach((b) => {
-          b.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            const id = li.dataset.id;
-            if (b.dataset.act === "del" && id) {
-              if (confirm("删除该条日程？")) deleteEntry(selectedDate, id);
-            } else if (b.dataset.act === "edit" && id) {
-              openEditDialog(selectedDate, id);
-            }
-          });
-        });
-        if (isAuthed) {
-          li.addEventListener("click", () => {
-            const id = li.dataset.id;
-            if (id) openEditDialog(selectedDate, id);
-          });
+    calBody.innerHTML = html;
+    calBody.querySelectorAll<HTMLElement>(".cal-cell").forEach((cell) => {
+      cell.addEventListener("click", () => {
+        selectedDate = cell.dataset.date || selectedDate;
+        if (cell.classList.contains("outside")) {
+          const { y, m } = parseDate(selectedDate);
+          viewYear = y; viewMonth = m;
         }
-      });
-    }
-
-    // ---------- editing ----------
-    async function saveDate(date: string, entries: ScheduleEntry[]) {
-      const res = await fetch(`${apiBase}/schedule/save`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, entries }),
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `保存失败 (${res.status})`);
-      }
-      const data = await res.json();
-      if (data.entries) schedule[date] = data.entries;
-      else if (data.entries?.length === 0) delete schedule[date];
-      renderCalendar();
-      renderAgenda();
-    }
-
-    async function addOrUpdateEntry(date: string, entry: ScheduleEntry) {
-      const arr = [...(schedule[date] || [])];
-      const idx = arr.findIndex((e) => e.id === entry.id);
-      if (idx >= 0) arr[idx] = entry;
-      else { if (!entry.id) entry.id = genId(); arr.push(entry); }
-      await saveDate(date, arr);
-    }
-
-    async function deleteEntry(date: string, id: string) {
-      const arr = (schedule[date] || []).filter((e) => e.id !== id || !e.id);
-      // also drop if no id matched (legacy entries without id)
-      const fresh = (schedule[date] || []).filter((e) => e.id !== id);
-      void arr;
-      await saveDate(date, fresh);
-    }
-
-    // ---------- dialogs ----------
-    const loginDlg = document.getElementById("login-dlg") as HTMLDialogElement;
-    const editDlg = document.getElementById("edit-dlg") as HTMLDialogElement;
-    const loginForm = document.getElementById("login-form") as HTMLFormElement;
-    const loginError = document.getElementById("login-error")!;
-    const loginPassword = document.getElementById("login-password") as HTMLInputElement;
-    const loginCancel = document.getElementById("login-cancel")!;
-
-    loginBtn.addEventListener("click", () => {
-      if (isAuthed) {
-        // clicking again logs out
-        fetch(`${apiBase}/logout`, { method: "POST", credentials: "same-origin" })
-          .catch(() => {});
-        setAuthed(false);
-      } else {
-        loginError.hidden = true;
-        loginDlg.showModal();
-        setTimeout(() => loginPassword.focus(), 50);
-      }
-    });
-    loginCancel.addEventListener("click", () => loginDlg.close());
-
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(loginForm);
-      const password = String(fd.get("password") || "");
-      loginError.hidden = true;
-      try {
-        const res = await fetch(`${apiBase}/login`, {
-          method: "POST", credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          loginError.textContent = data.error || "登录失败";
-          loginError.hidden = false;
-          return;
-        }
-        loginDlg.close();
-        loginForm.reset();
-        setAuthed(true);
-      } catch (err: any) {
-        loginError.textContent = err?.message || "网络错误";
-        loginError.hidden = false;
-      }
-    });
-
-    function setAuthed(v: boolean) {
-      isAuthed = v;
-      document.body.classList.toggle("is-admin", v);
-      loginBtn.classList.toggle("is-authed", v);
-      loginBtn.title = v ? "已登录 · 点击退出" : "编辑日程（需登录）";
-      editActions.hidden = !v;
-      renderAgenda(); // refresh to show/hide edit icons
-    }
-
-    // categories picker
-    const catPicker = document.getElementById("cat-picker")!;
-    function renderCatPicker(activeCat: string) {
-      catPicker.innerHTML = palette.map((p) =>
-        `<button type="button" class="cat-swatch${p.key === activeCat ? " is-active" : ""}" data-cat="${p.key}" style="--c:${p.c};--t:${p.t};"><span class="dot"></span>${p.zh}</button>`
-      ).join("");
-      catPicker.querySelectorAll<HTMLButtonElement>(".cat-swatch").forEach((b) => {
-        b.addEventListener("click", () => {
-          catPicker.querySelectorAll(".cat-swatch").forEach((x) => x.classList.remove("is-active"));
-          b.classList.add("is-active");
-          (document.getElementById("edit-category") as HTMLInputElement).value = b.dataset.cat || "meeting";
-        });
-      });
-    }
-
-    const editForm = document.getElementById("edit-form") as HTMLFormElement;
-    const editTitle = document.getElementById("edit-title")!;
-    const editId = document.getElementById("edit-id") as HTMLInputElement;
-    const editDate = document.getElementById("edit-date") as HTMLInputElement;
-    const editTime = document.getElementById("edit-time") as HTMLInputElement;
-    const editTitleInput = document.getElementById("edit-title-input") as HTMLInputElement;
-    const editLocation = document.getElementById("edit-location") as HTMLInputElement;
-    const editCategory = document.getElementById("edit-category") as HTMLInputElement;
-    const editError = document.getElementById("edit-error")!;
-    const editDelete = document.getElementById("edit-delete")!;
-    const editCancel = document.getElementById("edit-cancel")!;
-
-    function openEditDialog(date: string, id?: string) {
-      editError.hidden = true;
-      editDate.value = date;
-      if (id) {
-        const e = (schedule[date] || []).find((x) => x.id === id);
-        if (!e) return;
-        editId.value = e.id || "";
-        editTime.value = e.time;
-        editTitleInput.value = e.title;
-        editLocation.value = e.location || "";
-        editCategory.value = e.category || "meeting";
-        editTitle.textContent = "编辑日程";
-        editDelete.hidden = false;
-      } else {
-        editId.value = "";
-        editTime.value = "10:00";
-        editTitleInput.value = "";
-        editLocation.value = "";
-        editCategory.value = "meeting";
-        editTitle.textContent = "新增日程";
-        editDelete.hidden = true;
-      }
-      renderCatPicker(editCategory.value);
-      editDlg.showModal();
-      setTimeout(() => editTime.focus(), 50);
-    }
-
-    document.getElementById("add-btn")?.addEventListener("click", () => openEditDialog(selectedDate));
-    editCancel.addEventListener("click", () => editDlg.close());
-    editDelete.addEventListener("click", async () => {
-      const id = editId.value;
-      if (!id) return;
-      if (!confirm("删除该条日程？")) return;
-      editDlg.close();
-      try { await deleteEntry(editDate.value, id); }
-      catch (err: any) { alert(err?.message || "删除失败"); }
-    });
-
-    editForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const entry: ScheduleEntry = {
-        id: editId.value || genId(),
-        time: editTime.value.trim() || "全天",
-        title: editTitleInput.value.trim(),
-        location: editLocation.value.trim() || undefined,
-        category: editCategory.value,
-      };
-      if (!entry.title) { editError.textContent = "请填写标题"; editError.hidden = false; return; }
-      const date = editDate.value;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { editError.textContent = "日期格式错误"; editError.hidden = false; return; }
-      try {
-        await addOrUpdateEntry(date, entry);
-        editDlg.close();
-        // If edited on a day not currently selected, jump to it for visual feedback
-        if (date !== selectedDate) {
-          selectedDate = date;
-          const [y, m] = date.split("-").map(Number);
-          if (y !== viewYear || m - 1 !== viewMonth) {
-            viewYear = y; viewMonth = m - 1;
-          }
-          renderCalendar();
-        }
+        renderCalendar();
         renderAgenda();
-      } catch (err: any) {
-        editError.textContent = err?.message || "保存失败";
-        editError.hidden = false;
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Agenda rendering
+  // ---------------------------------------------------------------------------
+  function renderAgenda() {
+    const events = eventsFor(selectedDate);
+    const { y, m, d } = parseDate(selectedDate);
+    const dateObj = new Date(y, m, d);
+    const isToday = selectedDate === todayStr;
+    const dow = dayNames[dateObj.getDay()];
+
+    // Title: show date context
+    agendaTitle.textContent = isToday ? "今日" : `${m + 1}月${d}日`;
+    agendaCount.textContent = events.length ? `${events.length}项` : "";
+
+    if (events.length === 0) {
+      agendaList.innerHTML = `<li class="agenda-empty">当天暂无日程安排</li>`;
+    } else {
+      const sorted = [...events].sort((a, b) => {
+        const aa = a.time === "全天" ? "" : a.time;
+        const bb = b.time === "全天" ? "" : b.time;
+        return aa.localeCompare(bb);
+      });
+
+      // Group by category to compute shade indices
+      const catGroup = new Map<string, ScheduleEntry[]>();
+      for (const e of sorted) {
+        const k = e.category || "other";
+        if (!catGroup.has(k)) catGroup.set(k, []);
+        catGroup.get(k)!.push(e);
       }
-    });
-
-    // ---------- nav buttons ----------
-    document.getElementById("prev-month")?.addEventListener("click", () => {
-      if (viewMonth === 0) { viewMonth = 11; viewYear--; } else { viewMonth--; }
-      renderCalendar();
-    });
-    document.getElementById("next-month")?.addEventListener("click", () => {
-      if (viewMonth === 11) { viewMonth = 0; viewYear++; } else { viewMonth++; }
-      renderCalendar();
-    });
-    document.getElementById("today-btn")?.addEventListener("click", () => {
-      const now = new Date();
-      viewYear = now.getFullYear(); viewMonth = now.getMonth();
-      selectedDate = todayStr;
-      renderCalendar(); renderAgenda();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
-      if (loginDlg.open || editDlg.open) return;
-      const [y, m, d] = (selectedDate || todayStr).split("-").map(Number);
-      const cur = new Date(y, m - 1, d);
-      if (e.key === "ArrowLeft") cur.setDate(cur.getDate() - 1);
-      else if (e.key === "ArrowRight") cur.setDate(cur.getDate() + 1);
-      else if (e.key === "ArrowUp") cur.setDate(cur.getDate() - 7);
-      else if (e.key === "ArrowDown") cur.setDate(cur.getDate() + 7);
-      else return;
-      e.preventDefault();
-      selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-      if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
-        viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
+      const shadeIdx = new Map<string, number>();
+      for (const [, items] of catGroup) {
+        items.forEach((e, i) => shadeIdx.set(e.id || "", i));
       }
-      renderCalendar(); renderAgenda();
-    });
 
-    // ---------- day rollover ----------
-    let lastDay = todayStr;
-    // Check every 60s. At midnight Shanghai, refresh cached schedule from the
-    // server so newly-added entries from another browser appear too.
-    async function refreshFromServer() {
-      try {
-        const res = await fetch(`${apiBase}/schedule`, { credentials: "same-origin" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && typeof data === "object") {
-            schedule = data as Schedule;
-            renderCalendar(); renderAgenda();
-          }
-        }
-      } catch { /* offline / static mode — silently ignore */ }
+      agendaList.innerHTML = sorted.map((e) => {
+        const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
+        const cat = e.category || "other";
+        const sIdx = shadeIdx.get(e.id || "") ?? 0;
+        const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
+        const style = customColor
+          ? `--bar:${e.color};`
+          : chipColors(cat, sIdx);
+        return `<li class="agenda-item" data-id="${e.id || ""}">
+          <div class="agenda-bar" style="${style}"></div>
+          <div class="agenda-time${allDay ? " all-day" : ""}">${escapeHtml(e.time)}</div>
+          <div class="agenda-body">
+            <div class="agenda-title-text">${escapeHtml(e.title)}</div>
+          </div>
+          <div class="ed-icons">
+            <button class="ed-icon-btn" data-act="edit" title="编辑">&#9998;</button>
+            <button class="ed-icon-btn" data-act="del" title="删除">&#10005;</button>
+          </div>
+        </li>`;
+      }).join("");
+      wireAgendaActions();
     }
+  }
 
-    setInterval(() => {
-      const now = todayStringShanghai();
-      if (now !== lastDay) {
-        lastDay = now;
-        todayStr = now;
-        // if we were parked on the old "today", jump to the new one
-        if (selectedDate && selectedDate !== todayStr) {
-          const newPos = new Date();
-          if (newPos.getFullYear() === viewYear && newPos.getMonth() === viewMonth) {
-            // same month visible — just update the highlight
-          } else {
-            viewYear = newPos.getFullYear(); viewMonth = newPos.getMonth();
+  function wireAgendaActions() {
+    if (!isAuthed) return;
+    agendaList.querySelectorAll<HTMLElement>(".agenda-item").forEach((li) => {
+      li.querySelectorAll<HTMLButtonElement>(".ed-icon-btn").forEach((b) => {
+        b.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          const id = li.dataset.id;
+          if (b.dataset.act === "del" && id) {
+            if (confirm("删除该条日程？")) deleteEntry(selectedDate, id);
+          } else if (b.dataset.act === "edit" && id) {
+            openEditDialog(selectedDate, id);
           }
-          selectedDate = todayStr;
-          renderCalendar(); renderAgenda();
-        }
-        (document.querySelector(".cal-cell.today") as HTMLElement | null)?.focus?.();
-      }
-    }, 60_000);
+        });
+      });
+      li.addEventListener("click", () => {
+        const id = li.dataset.id;
+        if (id && isAuthed) openEditDialog(selectedDate, id);
+      });
+    });
+  }
 
-    // Pull fresh schedule from server once on load (in case the SSG snapshot
-    // is stale) — silent on failure so static GitHub Pages still works.
-    refreshFromServer();
-    // Periodically refresh from server every 5 minutes to pick up edits made
-    // elsewhere (e.g. phone) without needing a page reload.
-    setInterval(refreshFromServer, 5 * 60_000);
-
-    // ---------- boot ----------
-    // Probe whether we're already authed (page reload with cookie set)
-    fetch(`${apiBase}/auth/check`, { credentials: "same-origin" })
-      .then((r) => r.ok ? r.json() : Promise.reject())
-      .then(() => setAuthed(true))
-      .catch(() => setAuthed(false));
-
+  // ---------------------------------------------------------------------------
+  // Editing
+  // ---------------------------------------------------------------------------
+  async function saveDate(date: string, entries: ScheduleEntry[]) {
+    const res = await fetch(`${apiBase}/schedule/save`, {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, entries }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(txt || `保存失败 (${res.status})`);
+    }
+    const data = await res.json();
+    if (data.entries) schedule[date] = data.entries;
+    else if (data.entries?.length === 0) delete schedule[date];
     renderCalendar();
     renderAgenda();
   }
+
+  async function addOrUpdateEntry(date: string, entry: ScheduleEntry) {
+    const arr = [...(schedule[date] || [])];
+    const idx = arr.findIndex((e) => e.id === entry.id);
+    if (idx >= 0) arr[idx] = entry;
+    else { entry.id = entry.id || genId(); arr.push(entry); }
+    await saveDate(date, arr);
+  }
+
+  async function deleteEntry(date: string, id: string) {
+    const fresh = (schedule[date] || []).filter((e) => e.id !== id);
+    await saveDate(date, fresh);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Login
+  // ---------------------------------------------------------------------------
+  const loginDlg = document.getElementById("login-dlg") as HTMLDialogElement;
+  const loginForm = document.getElementById("login-form") as HTMLFormElement;
+  const loginError = document.getElementById("login-error")!;
+  const loginPassword = document.getElementById("login-password") as HTMLInputElement;
+  const loginCancel = document.getElementById("login-cancel")!;
+
+  loginBtn.addEventListener("click", () => {
+    if (isAuthed) {
+      fetch(`${apiBase}/logout`, { method: "POST", credentials: "same-origin" }).catch(() => {});
+      setAuthed(false);
+    } else {
+      loginError.hidden = true;
+      loginDlg.showModal();
+      setTimeout(() => loginPassword.focus(), 50);
+    }
+  });
+  loginCancel.addEventListener("click", () => loginDlg.close());
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(loginForm);
+    const password = String(fd.get("password") || "");
+    loginError.hidden = true;
+    try {
+      const res = await fetch(`${apiBase}/login`, {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        loginError.textContent = data.error || "登录失败";
+        loginError.hidden = false; return;
+      }
+      loginDlg.close(); loginForm.reset(); setAuthed(true);
+    } catch (err: any) {
+      loginError.textContent = err?.message || "网络错误";
+      loginError.hidden = false;
+    }
+  });
+
+  function setAuthed(v: boolean) {
+    isAuthed = v;
+    document.body.classList.toggle("is-admin", v);
+    loginBtn.classList.toggle("is-authed", v);
+    loginBtn.title = v ? "已登录" : "登录管理";
+    editActions.hidden = !v;
+    renderAgenda();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Edit dialog
+  // ---------------------------------------------------------------------------
+  const editDlg = document.getElementById("edit-dlg") as HTMLDialogElement;
+  const editForm = document.getElementById("edit-form") as HTMLFormElement;
+  const editTitleH = document.getElementById("edit-title")!;
+  const editId = document.getElementById("edit-id") as HTMLInputElement;
+  const editDate = document.getElementById("edit-date") as HTMLInputElement;
+  const editStartDate = document.getElementById("edit-start-date") as HTMLInputElement;
+  const editEndDate = document.getElementById("edit-end-date") as HTMLInputElement;
+  const editTime = document.getElementById("edit-time") as HTMLInputElement;
+  const editTitleInput = document.getElementById("edit-title-input") as HTMLInputElement;
+  const editCategory = document.getElementById("edit-category") as HTMLInputElement;
+  const editColor = document.getElementById("edit-color") as HTMLInputElement;
+  const editError = document.getElementById("edit-error")!;
+  const editDelete = document.getElementById("edit-delete")!;
+  const editCancel = document.getElementById("edit-cancel")!;
+  const resetColor = document.getElementById("reset-color")!;
+
+  // Mode tabs
+  const modeTabs = document.querySelectorAll<HTMLButtonElement>(".mode-tab");
+  const singleFields = document.getElementById("single-fields")!;
+  const periodFields = document.getElementById("period-fields")!;
+  let currentMode: "single" | "period" = "single";
+
+  modeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      modeTabs.forEach((t) => t.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      currentMode = tab.dataset.mode as "single" | "period";
+      singleFields.hidden = currentMode !== "single";
+      periodFields.hidden = currentMode !== "period";
+    });
+  });
+
+  // Category picker
+  const catPicker = document.getElementById("cat-picker")!;
+  function renderCatPicker(activeCat: string) {
+    catPicker.innerHTML = CATS.map((p) => {
+      const hex = baseHex(p.key);
+      return `<button type="button" class="cat-swatch${p.key === activeCat ? " is-active" : ""}" data-cat="${p.key}" style="--c:${hex};--t:${hex}22;"><span class="dot"></span>${p.zh}</button>`;
+    }).join("");
+    catPicker.querySelectorAll<HTMLButtonElement>(".cat-swatch").forEach((b) => {
+      b.addEventListener("click", () => {
+        catPicker.querySelectorAll(".cat-swatch").forEach((x) => x.classList.remove("is-active"));
+        b.classList.add("is-active");
+        editCategory.value = b.dataset.cat || "other";
+        // Auto-update color to category default
+        editColor.value = baseHex(editCategory.value);
+      });
+    });
+  }
+
+  // Reset color
+  resetColor.addEventListener("click", () => {
+    editColor.value = baseHex(editCategory.value);
+  });
+
+  function openEditDialog(date: string, id?: string) {
+    editError.hidden = true;
+    currentMode = "single";
+    modeTabs.forEach((t) => t.classList.toggle("is-active", t.dataset.mode === "single"));
+    singleFields.hidden = false;
+    periodFields.hidden = true;
+    editDate.value = date;
+
+    if (id) {
+      const e = (schedule[date] || []).find((x) => x.id === id);
+      if (!e) return;
+      editId.value = e.id || "";
+      editTime.value = e.time;
+      editTitleInput.value = e.title;
+      editCategory.value = e.category || "other";
+      editColor.value = e.color || baseHex(e.category || "other");
+      editTitleH.textContent = "编辑日程";
+      editDelete.hidden = false;
+    } else {
+      editId.value = "";
+      editTime.value = "10:00";
+      editTitleInput.value = "";
+      editCategory.value = "other";
+      editColor.value = baseHex("other");
+      editTitleH.textContent = "新增日程";
+      editDelete.hidden = true;
+    }
+    renderCatPicker(editCategory.value);
+    editDlg.showModal();
+    setTimeout(() => editTime.focus(), 50);
+  }
+
+  document.getElementById("add-btn")?.addEventListener("click", () => openEditDialog(selectedDate));
+  editCancel.addEventListener("click", () => editDlg.close());
+
+  editDelete.addEventListener("click", async () => {
+    const id = editId.value;
+    if (!id || !confirm("删除该条日程？")) return;
+    editDlg.close();
+    try { await deleteEntry(editDate.value, id); }
+    catch (err: any) { alert(err?.message || "删除失败"); }
+  });
+
+  editForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!editTitleInput.value.trim()) {
+      editError.textContent = "请填写标题"; editError.hidden = false; return;
+    }
+    const color = editColor.value;
+    const colorVal = color && color !== baseHex(editCategory.value) ? color : undefined;
+
+    const baseEntry: ScheduleEntry = {
+      time: editTime.value.trim() || "全天",
+      title: editTitleInput.value.trim(),
+      category: editCategory.value,
+      color: colorVal,
+    };
+
+    try {
+      if (currentMode === "single") {
+        const date = editDate.value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          editError.textContent = "日期格式错误"; editError.hidden = false; return;
+        }
+        const entry = { ...baseEntry, id: editId.value || genId() };
+        await addOrUpdateEntry(date, entry);
+        if (date !== selectedDate) {
+          selectedDate = date;
+          const { y, m } = parseDate(date);
+          if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
+          renderCalendar();
+        }
+      } else {
+        // Period mode
+        const start = editStartDate.value;
+        const end = editEndDate.value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+          editError.textContent = "日期格式错误"; editError.hidden = false; return;
+        }
+        if (end < start) {
+          editError.textContent = "结束日期不能早于开始日期"; editError.hidden = false; return;
+        }
+        const dates = dateRange(start, end);
+        for (const date of dates) {
+          const entry = { ...baseEntry, id: genId() };
+          await addOrUpdateEntry(date, entry);
+        }
+        // Navigate to start date
+        selectedDate = start;
+        const { y, m } = parseDate(start);
+        if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
+        renderCalendar();
+      }
+      editDlg.close();
+      renderAgenda();
+    } catch (err: any) {
+      editError.textContent = err?.message || "保存失败";
+      editError.hidden = false;
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
+  document.getElementById("prev-month")?.addEventListener("click", () => {
+    if (viewMonth === 0) { viewMonth = 11; viewYear--; } else { viewMonth--; }
+    renderCalendar();
+  });
+  document.getElementById("next-month")?.addEventListener("click", () => {
+    if (viewMonth === 11) { viewMonth = 0; viewYear++; } else { viewMonth++; }
+    renderCalendar();
+  });
+  document.getElementById("today-btn")?.addEventListener("click", () => {
+    const now = new Date();
+    viewYear = now.getFullYear(); viewMonth = now.getMonth();
+    selectedDate = todayStr;
+    renderCalendar(); renderAgenda();
+  });
+
+  // Day navigation (agenda)
+  document.getElementById("prev-day")?.addEventListener("click", () => {
+    const { y, m, d } = parseDate(selectedDate);
+    const cur = new Date(y, m, d);
+    cur.setDate(cur.getDate() - 1);
+    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
+      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
+    }
+    renderCalendar(); renderAgenda();
+  });
+  document.getElementById("next-day")?.addEventListener("click", () => {
+    const { y, m, d } = parseDate(selectedDate);
+    const cur = new Date(y, m, d);
+    cur.setDate(cur.getDate() + 1);
+    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
+      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
+    }
+    renderCalendar(); renderAgenda();
+  });
+
+  // Keyboard
+  document.addEventListener("keydown", (e) => {
+    if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if ((document.querySelector("dialog[open]")) !== null) return;
+    const { y, m, d } = parseDate(selectedDate || todayStr);
+    const cur = new Date(y, m, d);
+    if (e.key === "ArrowLeft") cur.setDate(cur.getDate() - 1);
+    else if (e.key === "ArrowRight") cur.setDate(cur.getDate() + 1);
+    else if (e.key === "ArrowUp") cur.setDate(cur.getDate() - 7);
+    else if (e.key === "ArrowDown") cur.setDate(cur.getDate() + 7);
+    else return;
+    e.preventDefault();
+    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
+      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
+    }
+    renderCalendar(); renderAgenda();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Auto-refresh
+  // ---------------------------------------------------------------------------
+  let lastDay = todayStr;
+  async function refreshFromServer() {
+    try {
+      const res = await fetch(`${apiBase}/schedule`, { credentials: "same-origin" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); }
+      }
+    } catch { /* ignore */ }
+  }
+
+  setInterval(() => {
+    const now = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date());
+    if (now !== lastDay) {
+      lastDay = now; todayStr = now;
+      if (selectedDate && selectedDate !== todayStr) {
+        const np = new Date();
+        if (np.getFullYear() !== viewYear || np.getMonth() !== viewMonth) {
+          viewYear = np.getFullYear(); viewMonth = np.getMonth();
+        }
+        selectedDate = todayStr;
+        renderCalendar(); renderAgenda();
+      }
+    }
+  }, 60_000);
+
+  refreshFromServer();
+  setInterval(refreshFromServer, 5 * 60_000);
+
+  // Auth probe
+  fetch(`${apiBase}/auth/check`, { credentials: "same-origin" })
+    .then((r) => r.ok ? r.json() : Promise.reject())
+    .then(() => setAuthed(true))
+    .catch(() => setAuthed(false));
+
+  // Boot
+  renderCalendar();
+  renderAgenda();
 </script>
 </BaseLayout>

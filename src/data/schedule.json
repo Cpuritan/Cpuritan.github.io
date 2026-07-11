@@ -1,123 +1,42 @@
 {
   "2026-07-11": [
-    {
-      "category": "meeting",
-      "id": "e_seed_1",
-      "location": "会议室 A",
-      "time": "10:00",
-      "title": "团队周会"
-    },
-    {
-      "category": "study",
-      "id": "e_seed_2",
-      "location": "图书馆 3F",
-      "time": "14:00",
-      "title": "智能预测+优化 阅读班"
-    }
+    { "id": "e11a", "time": "10:00", "title": "团队周会", "category": "research" },
+    { "id": "e11b", "time": "14:00", "title": "智能预测+优化 论文精读", "category": "study" }
   ],
   "2026-07-12": [
-    {
-      "category": "deadline",
-      "id": "e_seed_3",
-      "time": "全天",
-      "title": "项目中期报告提交截止"
-    },
-    {
-      "category": "meeting",
-      "id": "e_seed_4",
-      "location": "Zoom",
-      "time": "15:00",
-      "title": "与导师一对一讨论"
-    }
+    { "id": "e12a", "time": "全天", "title": "项目中期报告截止", "category": "research" },
+    { "id": "e12b", "time": "15:00", "title": "与导师一对一讨论", "category": "research" },
+    { "id": "e12c", "time": "19:30", "title": "健身房", "category": "life" }
+  ],
+  "2026-07-14": [
+    { "id": "e14a", "time": "09:00", "title": "线性代数复习", "category": "study" },
+    { "id": "e14b", "time": "15:00", "title": "去中关村修电脑", "category": "outing" }
   ],
   "2026-07-15": [
-    {
-      "category": "study",
-      "id": "e_seed_5",
-      "location": "图书馆 3F 讨论区",
-      "time": "09:30",
-      "title": "论文小组讨论"
-    },
-    {
-      "category": "meeting",
-      "id": "e_seed_6",
-      "time": "14:00",
-      "title": "算法实现进度同步"
-    }
+    { "id": "e15a", "time": "09:30", "title": "论文小组讨论", "category": "study" },
+    { "id": "e15b", "time": "14:00", "title": "算法实现进度同步", "category": "research" },
+    { "id": "e15c", "time": "20:00", "title": "看纪录片", "category": "life" }
   ],
   "2026-07-18": [
-    {
-      "category": "meeting",
-      "id": "e_seed_7",
-      "time": "08:00",
-      "title": "晨会 — 本周回顾"
-    },
-    {
-      "category": "meeting",
-      "id": "e_seed_8",
-      "time": "11:00",
-      "title": "代码审查会议"
-    }
+    { "id": "e18a", "time": "08:00", "title": "晨会 — 本周回顾", "category": "research" },
+    { "id": "e18b", "time": "11:00", "title": "代码审查会议", "category": "research" }
   ],
-  "2026-07-20": [
-    {
-      "category": "deadline",
-      "id": "e_seed_9",
-      "time": "全天",
-      "title": "暑期实习申请截止"
-    }
+  "2026-07-19": [
+    { "id": "e19a", "time": "全天", "title": "去颐和园", "category": "outing" }
   ],
   "2026-07-22": [
-    {
-      "category": "study",
-      "id": "e_seed_10",
-      "location": "理学楼 201",
-      "time": "13:00",
-      "title": "运筹学研讨班"
-    },
-    {
-      "category": "personal",
-      "id": "e_seed_11",
-      "time": "16:30",
-      "title": "健身 / 跑步"
-    }
+    { "id": "e22a", "time": "13:00", "title": "运筹学研讨班", "category": "study" },
+    { "id": "e22b", "time": "16:30", "title": "跑步", "category": "life" }
   ],
   "2026-07-25": [
-    {
-      "category": "meeting",
-      "id": "e_seed_12",
-      "location": "线上 · 腾讯会议",
-      "time": "10:00",
-      "title": "组会汇报"
-    },
-    {
-      "category": "social",
-      "id": "e_seed_13",
-      "location": "五道口",
-      "time": "19:00",
-      "title": "与朋友聚餐"
-    }
+    { "id": "e25a", "time": "10:00", "title": "组会汇报", "category": "research" },
+    { "id": "e25b", "time": "19:00", "title": "与朋友聚餐", "category": "outing" }
   ],
   "2026-07-28": [
-    {
-      "category": "study",
-      "id": "e_seed_14",
-      "time": "09:00",
-      "title": "Summer School 注册日"
-    }
+    { "id": "e28a", "time": "09:00", "title": "Summer School 注册截止", "category": "other" }
   ],
   "2026-07-30": [
-    {
-      "category": "deadline",
-      "id": "e_seed_15",
-      "time": "全天",
-      "title": "月末报告提交"
-    },
-    {
-      "category": "other",
-      "id": "e_seed_16",
-      "time": "15:00",
-      "title": "实验室设备维护"
-    }
+    { "id": "e30a", "time": "全天", "title": "月末报告提交", "category": "research" },
+    { "id": "e30b", "time": "15:00", "title": "整理实验室设备", "category": "life" }
   ]
 }

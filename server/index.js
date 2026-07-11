@@ -2,8 +2,24 @@ import express from "express";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+
+// Load .env if present (lets us avoid a `dotenv` dependency).
+// Never overrides process.env values that were set on the command line —
+// those always win, soservers can be re-pinned ad-hoc.
+try {
+  const envPath = path.join(import.meta.dirname, ".env");
+  const raw = readFileSync(envPath, "utf8");
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!m) continue;
+    if (process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+} catch {
+  // .env missing — fine, fall back to real env vars or PASSWORD=undefined
+}
 
 const PORT = Number(process.env.PORT ?? 3010);
 const PASSWORD = process.env.PASSWORD ?? "";
@@ -13,6 +29,7 @@ const TOKEN_TTL = "14d";
 
 if (!PASSWORD) {
   console.error("[schedule] FATAL: PASSWORD env var must be set.");
+  console.error("           Either put PASSWORD=... in server/.env, or pass it on the CLI:");
   console.error("           Example: PASSWORD=secret node index.js");
   process.exit(1);
 }
@@ -62,6 +79,7 @@ function cleanEntries(entries) {
     if (typeof e?.location === "string" && e.location.length <= 200 && e.location.trim()) out.location = e.location.trim();
     if (typeof e?.category === "string" && /^[\w-]{0,32}$/.test(e.category)) out.category = e.category;
     if (typeof e?.id === "string" && e.id.length <= 64) out.id = e.id;
+    if (typeof e?.color === "string" && /^#[0-9a-fA-F]{6}$/.test(e.color)) out.color = e.color;
     return out;
   }).filter((e) => e.title);
 }
