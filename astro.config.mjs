@@ -14,5 +14,15 @@ export default defineConfig({
     remarkRehype: {
       allowDangerousHtml: true
     }
+  },
+  server: {
+    // Proxy /api/* to the local schedule-editing server (see server/README.md)
+    // so the dev server can read/write the live schedule.json.
+    proxy: {
+      "/api": {
+        target: "http://localhost:3010",
+        changeOrigin: true
+      }
+    }
   }
 });
