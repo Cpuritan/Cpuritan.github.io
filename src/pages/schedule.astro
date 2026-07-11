@@ -223,10 +223,11 @@ function baseColor(cat: string): string {
   }
   .cal-body { display: grid; grid-template-columns: repeat(7, 1fr); }
   .cal-cell {
-    position: relative; min-height: 88px; padding: 0.4rem 0.35rem;
+    position: relative; height: 88px; padding: 0.4rem 0.35rem;
     border-right: 1px solid #f2f2f2; border-bottom: 1px solid #f2f2f2;
     background: var(--st-bg); cursor: pointer; transition: background 0.1s ease;
     display: flex; flex-direction: column; gap: 0.15rem;
+    overflow: hidden;
   }
   .cal-cell:nth-child(7n) { border-right: 0; }
   .cal-cell:hover { background: var(--st-card); }
@@ -377,7 +378,7 @@ function baseColor(cat: string): string {
   @media (max-width: 760px) {
     .sched-grid { grid-template-columns: 1fr; }
     .agenda-panel { position: static; }
-    .cal-cell { min-height: 60px; padding: 0.25rem 0.25rem; }
+    .cal-cell { height: 64px; padding: 0.25rem 0.25rem; }
     .chip { display: none; }
   }
 </style>
