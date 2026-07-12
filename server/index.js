@@ -80,6 +80,7 @@ function cleanEntries(entries) {
     if (typeof e?.category === "string" && /^[\w-]{0,32}$/.test(e.category)) out.category = e.category;
     if (typeof e?.id === "string" && e.id.length <= 64) out.id = e.id;
     if (typeof e?.color === "string" && /^#[0-9a-fA-F]{6}$/.test(e.color)) out.color = e.color;
+    if (e?.done === 0 || e?.done === 1 || e?.done === 2) out.done = e.done;
     return out;
   }).filter((e) => e.title);
 }
@@ -156,6 +157,21 @@ app.post("/api/schedule/saveAll", requireAuth, async (req, res) => {
   }
   const cleaned = {};
   for (const [k, v] of Object.entries(schedule)) {
+    if (k === "__periods__") {
+      if (Array.isArray(v)) {
+        cleaned.__periods__ = v.map(p => ({
+          id: typeof p.id === "string" && p.id.length <= 64 ? p.id : "",
+          title: typeof p.title === "string" ? p.title.trim() : "",
+          start: typeof p.start === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.start) ? p.start : "",
+          end: typeof p.end === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.end) ? p.end : "",
+          time: typeof p.time === "string" && p.time.length <= 32 ? p.time : "全天",
+          category: typeof p.category === "string" && /^[\w-]{0,32}$/.test(p.category) ? p.category : "other",
+          color: typeof p.color === "string" && /^#[0-9a-fA-F]{6}$/.test(p.color) ? p.color : undefined,
+          done: p.done === 0 || p.done === 1 || p.done === 2 ? p.done : 0,
+        })).filter(p => p.id && p.start && p.end && p.title);
+      }
+      continue;
+    }
     if (!DATE_RE.test(k)) continue;
     const arr = cleanEntries(v);
     if (arr.length) cleaned[k] = arr;

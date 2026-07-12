@@ -10,7 +10,6 @@ const todayStr = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 }).format(today);
 
-// 5 categories: each with a distinct hue and saturation for the shade system
 const categories = [
   { key: "research", zh: "科研", h: "215", s: "65" },
   { key: "study",    zh: "学习", h: "270", s: "55" },
@@ -35,11 +34,8 @@ function baseColor(cat: string): string {
     data-today={todayStr}
     data-api="/api"
   >
-    <!-- ===== Toolbar ===== -->
     <header class="sched-toolbar">
-      <div class="sched-title">
-        <h1>Calendar</h1>
-      </div>
+      <div class="sched-title"><h1>Calendar</h1></div>
       <div class="sched-actions">
         <div class="tb-group">
           <button type="button" class="tb-btn" id="prev-month" aria-label="上月">‹</button>
@@ -51,9 +47,7 @@ function baseColor(cat: string): string {
       </div>
     </header>
 
-    <!-- ===== Grid ===== -->
     <div class="sched-grid">
-      <!-- Calendar -->
       <section class="cal-panel" aria-label="月历">
         <div class="cal-head">
           <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
@@ -61,7 +55,6 @@ function baseColor(cat: string): string {
         <div class="cal-body" id="cal-body"></div>
       </section>
 
-      <!-- Agenda -->
       <section class="agenda-panel" aria-label="日程列表">
         <div class="agenda-head">
           <button type="button" class="day-btn" id="prev-day" aria-label="前一天">‹</button>
@@ -98,7 +91,6 @@ function baseColor(cat: string): string {
     <form method="dialog" class="dlg-form" id="edit-form">
       <h3 id="edit-title">新增日程</h3>
 
-      <!-- Mode tabs -->
       <div class="mode-tabs" id="mode-tabs">
         <button type="button" class="mode-tab is-active" data-mode="single">日程计划</button>
         <button type="button" class="mode-tab" data-mode="period">周期规划</button>
@@ -106,7 +98,6 @@ function baseColor(cat: string): string {
 
       <input type="hidden" name="id" id="edit-id" />
 
-      <!-- Single-day fields -->
       <div id="single-fields">
         <label class="dlg-field">
           <span>日期</span>
@@ -114,7 +105,6 @@ function baseColor(cat: string): string {
         </label>
       </div>
 
-      <!-- Period fields -->
       <div id="period-fields" hidden>
         <label class="dlg-field">
           <span>开始日期</span>
@@ -181,21 +171,14 @@ function baseColor(cat: string): string {
 
   .sched-page { max-width: 920px; margin: 0 auto; }
 
-  /* ===== Toolbar ===== */
   .sched-toolbar {
     display: flex; align-items: center; justify-content: space-between;
     gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem;
   }
   .sched-title h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.01em; }
   .sched-actions { display: flex; gap: 0.4rem; align-items: center; }
-
   .tb-group { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--st-line); border-radius: 10px; background: var(--st-bg); overflow: hidden; }
-  .tb-btn {
-    min-width: 2.2rem; height: 2.2rem; padding: 0 0.5rem;
-    border: none; background: transparent; color: var(--st-text);
-    font-family: inherit; font-size: 0.9rem; cursor: pointer;
-    transition: background 0.12s ease;
-  }
+  .tb-btn { min-width: 2.2rem; height: 2.2rem; padding: 0 0.5rem; border: none; background: transparent; color: var(--st-text); font-family: inherit; font-size: 0.9rem; cursor: pointer; transition: background 0.12s ease; }
   .tb-btn:hover { background: var(--st-card); }
   .tb-btn:active { transform: translateY(1px); }
   .tb-label { padding: 0 0.6rem; font-size: 0.88rem; font-weight: 500; color: var(--st-text); white-space: nowrap; min-width: 6.5rem; text-align: center; }
@@ -205,7 +188,6 @@ function baseColor(cat: string): string {
   .tb-login:hover { border-color: var(--st-line); background: var(--st-card); }
   .tb-login.is-authed { color: var(--st-pop); border-color: var(--st-pop); background: var(--st-tint); }
 
-  /* ===== Grid ===== */
   .sched-grid {
     display: grid; grid-template-columns: 1fr 300px; gap: 1.2rem; align-items: flex-start;
   }
@@ -240,14 +222,8 @@ function baseColor(cat: string): string {
     box-shadow: 0 1px 4px rgba(43,110,211,0.25);
   }
   .cal-cell.selected { background: #f4f7fd; }
-  .cal-cell.selected .day-num {
-    box-shadow: 0 0 0 2px var(--st-pop);
-    color: var(--st-pop);
-  }
-  .cal-cell.today.selected .day-num {
-    box-shadow: 0 0 0 2px var(--st-pop);
-    background: var(--st-today-bd); color: #fff;
-  }
+  .cal-cell.selected .day-num { box-shadow: 0 0 0 2px var(--st-pop); color: var(--st-pop); }
+  .cal-cell.today.selected .day-num { box-shadow: 0 0 0 2px var(--st-pop); background: var(--st-today-bd); color: #fff; }
 
   .day-num {
     display: inline-flex; align-items: center; justify-content: center;
@@ -266,6 +242,8 @@ function baseColor(cat: string): string {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     line-height: 1.45; font-weight: 500;
   }
+  .chip.done-1 { text-decoration: wavy line-through; text-decoration-color: var(--chip-c, currentColor); opacity: 0.55; }
+  .chip.done-2 { opacity: 0.30; filter: grayscale(0.6); }
 
   /* ===== Agenda ===== */
   .agenda-panel {
@@ -275,43 +253,43 @@ function baseColor(cat: string): string {
   }
   .agenda-head {
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.65rem 0.7rem 0.55rem;
-    border-bottom: 1px solid var(--st-line);
+    padding: 0.65rem 0.7rem 0.55rem; border-bottom: 1px solid var(--st-line);
   }
   .agenda-head h2 { margin: 0; font-size: 0.95rem; flex: 1; text-align: center; }
   .agenda-count { color: var(--st-muted); font-size: 0.78rem; white-space: nowrap; }
-
-  .day-btn {
-    border: none; background: transparent; color: var(--st-muted);
-    cursor: pointer; font-size: 1rem; padding: 0.15rem 0.25rem; line-height: 1;
-    border-radius: 6px; transition: all 0.1s ease;
-  }
+  .day-btn { border: none; background: transparent; color: var(--st-muted); cursor: pointer; font-size: 1rem; padding: 0.15rem 0.25rem; line-height: 1; border-radius: 6px; transition: all 0.1s ease; }
   .day-btn:hover { background: var(--st-card); color: var(--st-text); }
 
   .agenda-list { list-style: none; margin: 0; padding: 0; }
   .agenda-item {
-    display: grid; grid-template-columns: 4px 56px 1fr auto;
-    gap: 0.5rem; padding: 0.5rem 0.7rem;
-    border-bottom: 1px solid #f2f2f2; align-items: start;
+    display: grid; grid-template-columns: 4px 56px 1fr auto auto;
+    gap: 0.5rem; padding: 0.5rem 0.7rem; border-bottom: 1px solid #f2f2f2; align-items: start;
     cursor: default;
   }
   .agenda-item:last-child { border-bottom: 0; }
   .agenda-bar { width: 4px; border-radius: 2px; align-self: stretch; background: var(--bar, var(--st-pop)); flex-shrink: 0; }
   .agenda-time { font-size: 0.8rem; color: var(--st-pop); font-weight: 600; padding-top: 0.08rem; }
   .agenda-time.all-day { color: var(--st-now); }
-  .agenda-body { min-width: 0; }
+  .agenda-body { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
   .agenda-title-text { font-size: 0.9rem; color: var(--st-text); line-height: 1.35; overflow-wrap: anywhere; }
-  .agenda-loc { margin-top: 0.1rem; font-size: 0.78rem; color: var(--st-muted); }
+  .agenda-item.done-1 .agenda-title-text { text-decoration: wavy line-through; text-decoration-color: var(--bar, var(--st-pop)); opacity: 0.6; }
+  .agenda-item.done-2 .agenda-title-text { text-decoration: line-through; text-decoration-color: var(--bar, var(--st-pop)); opacity: 0.35; filter: grayscale(0.6); }
   .agenda-empty { padding: 1.2rem 0.7rem; text-align: center; color: var(--st-muted); font-size: 0.85rem; }
   .agenda-edit-actions { margin: 0.4rem 0.7rem 0; }
 
-  /* ===== Edit buttons ===== */
-  .ed-btn {
-    border: 1px solid var(--st-line); background: var(--st-bg);
-    color: var(--st-text); border-radius: 8px; padding: 0.35rem 0.7rem;
-    font-family: inherit; font-size: 0.85rem; cursor: pointer;
-    transition: all 0.12s ease;
+  .done-btn {
+    border: 1px solid #e0e0e0; border-radius: 50%; width: 1.2rem; height: 1.2rem;
+    background: var(--st-bg); color: #bbb; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; padding: 0; line-height: 1;
+    transition: all 0.15s ease; flex-shrink: 0; margin-top: 0.08rem;
   }
+  .done-btn:hover { border-color: var(--st-pop); color: var(--st-pop); }
+  .done-btn.done-1 { border-color: #f5a623; background: #fef3e0; color: #f5a623; }
+  .done-btn.done-2 { border-color: #16a34a; background: #e6f7ec; color: #16a34a; }
+
+  /* ===== Edit buttons ===== */
+  .ed-btn { border: 1px solid var(--st-line); background: var(--st-bg); color: var(--st-text); border-radius: 8px; padding: 0.35rem 0.7rem; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 0.12s ease; }
   .ed-btn:hover { background: var(--st-card); border-color: #d0d0d0; }
   .ed-btn.primary { background: var(--st-pop); color: #fff; border-color: var(--st-pop); }
   .ed-btn.primary:hover { background: #1f5bb5; }
@@ -321,57 +299,32 @@ function baseColor(cat: string): string {
   .ed-btn.danger:hover { background: #fce8e6; }
   .ed-add { width: 100%; }
 
-  .ed-icon-btn {
-    border: none; background: transparent; color: #bbb; cursor: pointer;
-    font-size: 0.9rem; padding: 0 0.15rem; border-radius: 4px; line-height: 1.4;
-    transition: color 0.1s;
-  }
+  .ed-icon-btn { border: none; background: transparent; color: #bbb; cursor: pointer; font-size: 0.9rem; padding: 0 0.15rem; border-radius: 4px; line-height: 1.4; transition: color 0.1s; }
   .ed-icon-btn:hover { color: var(--st-text); }
   body:not(.is-admin) .ed-icons { display: none; }
 
-  /* ===== Dialogs ===== */
-  .dlg {
-    border: 1px solid var(--st-line); border-radius: 14px; padding: 0;
-    width: min(400px, 92vw); box-shadow: 0 16px 40px rgba(0,0,0,0.16); color: var(--st-text);
-  }
+  .dlg { border: 1px solid var(--st-line); border-radius: 14px; padding: 0; width: min(400px, 92vw); box-shadow: 0 16px 40px rgba(0,0,0,0.16); color: var(--st-text); }
   .dlg::backdrop { background: rgba(0,0,0,0.3); }
   .dlg-form { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.6rem; }
   .dlg-form h3 { margin: 0 0 0.1rem; font-size: 1rem; }
   .dlg-field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.82rem; color: var(--st-muted); }
-  .dlg-field input[type="text"],
-  .dlg-field input[type="password"],
-  .dlg-field input[type="date"] {
-    border: 1px solid var(--st-line); border-radius: 8px; padding: 0.4rem 0.5rem;
-    font-family: inherit; font-size: 0.92rem; color: var(--st-text);
-  }
+  .dlg-field input[type="text"], .dlg-field input[type="password"], .dlg-field input[type="date"] { border: 1px solid var(--st-line); border-radius: 8px; padding: 0.4rem 0.5rem; font-family: inherit; font-size: 0.92rem; color: var(--st-text); }
   .dlg-field input:focus { outline: 2px solid var(--st-pop); outline-offset: -1px; border-color: var(--st-pop); }
   .dlg-error { margin: 0; color: var(--st-now); font-size: 0.82rem; }
   .dlg-actions { display: flex; gap: 0.4rem; align-items: center; justify-content: flex-end; margin-top: 0.1rem; }
   .dlg-spacer { flex: 1; }
-
   .dlg-color-row { flex-direction: row; align-items: center; gap: 0.5rem; }
   .dlg-color-row > span { min-width: 3.5rem; }
   .color-row-inner { display: flex; align-items: center; gap: 0.4rem; }
   .color-row-inner input[type="color"] { width: 2rem; height: 2rem; padding: 0; border: 1px solid var(--st-line); border-radius: 8px; cursor: pointer; }
 
-  /* ===== Mode tabs ===== */
   .mode-tabs { display: flex; border: 1px solid var(--st-line); border-radius: 10px; overflow: hidden; }
-  .mode-tab {
-    flex: 1; border: none; background: var(--st-bg); color: var(--st-muted);
-    padding: 0.4rem 0; font-family: inherit; font-size: 0.82rem; cursor: pointer;
-    transition: all 0.12s ease;
-  }
+  .mode-tab { flex: 1; border: none; background: var(--st-bg); color: var(--st-muted); padding: 0.4rem 0; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all 0.12s ease; }
   .mode-tab.is-active { background: var(--st-pop); color: #fff; font-weight: 500; }
   .mode-tab:hover:not(.is-active) { background: var(--st-card); }
 
-  /* ===== Category picker ===== */
   .cat-picker { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .cat-swatch {
-    border: 1px solid var(--st-line); background: var(--st-bg);
-    border-radius: 999px; padding: 0.18rem 0.5rem; font-size: 0.8rem;
-    cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;
-    color: var(--st-text); transition: all 0.1s ease;
-  }
+  .cat-swatch { border: 1px solid var(--st-line); background: var(--st-bg); border-radius: 999px; padding: 0.18rem 0.5rem; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; color: var(--st-text); transition: all 0.1s ease; }
   .cat-swatch .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--c, #ccc); display: inline-block; flex-shrink: 0; }
   .cat-swatch.is-active { border-color: var(--c); background: var(--t, var(--st-card)); font-weight: 500; }
 
@@ -385,48 +338,36 @@ function baseColor(cat: string): string {
 
 <script>
   // ---------------------------------------------------------------------------
-  // Types
+  // Types & data
   // ---------------------------------------------------------------------------
   type ScheduleEntry = {
     id?: string; time: string; title: string; category?: string;
-    color?: string; // hex override, e.g. "#ff6600"
+    color?: string; done?: number; isPeriod?: boolean;
   };
-  type Schedule = Record<string, ScheduleEntry[]>;
+  type Schedule = Record<string, any>;
 
   const CATS: Array<{ key: string; zh: string; h: string; s: string }> =
     (window as any).__SCHEDULE_CATEGORIES__ ?? [];
 
-  // Per-category hsl shades (lightness offsets). 4 levels per category.
   const SHADES = [
-    { bgL: 95, fgL: 38, bdL: 65 },   // level 0 — lightest
-    { bgL: 91, fgL: 44, bdL: 59 },   // level 1
-    { bgL: 87, fgL: 50, bdL: 53 },   // level 2
-    { bgL: 83, fgL: 56, bdL: 47 },   // level 3 — darkest
+    { bgL: 95, fgL: 38, bdL: 65 },
+    { bgL: 91, fgL: 44, bdL: 59 },
+    { bgL: 87, fgL: 50, bdL: 53 },
+    { bgL: 83, fgL: 56, bdL: 47 },
   ];
 
   const DEFAULT_TODAY = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
   }).format(new Date());
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
   function pad(n: number): string { return String(n).padStart(2, "0"); }
-  function dateKey(y: number, m: number, d: number): string {
-    return `${y}-${pad(m + 1)}-${pad(d)}`;
-  }
-  function escapeHtml(s: string): string {
-    return s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
-  }
-  function genId(): string {
-    return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  }
+  function dateKey(y: number, m: number, d: number): string { return `${y}-${pad(m+1)}-${pad(d)}`; }
+  function escapeHtml(s: string): string { return s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";"); }
+  function genId(): string { return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function parseDate(str: string): { y: number; m: number; d: number } {
-    const [y, m, d] = str.split("-").map(Number);
-    return { y, m: m - 1, d };
+    const [y, m, d] = str.split("-").map(Number); return { y, m: m - 1, d };
   }
 
-  /** Compute HSL chip colours for a cat+shadeIndex combo. */
   function chipColors(cat: string | undefined, shade: number): string {
     const c = CATS.find((x) => x.key === (cat || "other"));
     if (!c) return `--chip-c:#555;--chip-t:#eee;--chip-cb:#555;--bar:#555;`;
@@ -437,28 +378,68 @@ function baseColor(cat: string): string {
     return `--chip-c:${fg};--chip-t:${bg};--chip-cb:${bd};--bar:${fg};`;
   }
 
-  /** Get the base hex colour for a category (used as <input type=color> default). */
   function baseHex(cat: string): string {
     const c = CATS.find((x) => x.key === (cat || "other"));
     if (!c) return "#6b7280";
-    // convert hsl(215,65%,48%) to hex approximation
-    const vals: Record<string, string> = {
-      research: "#3b7dd8", study: "#7c4dff", life: "#3ba366",
-      outing: "#e8913a", other: "#6b7280",
-    };
+    const vals: Record<string,string> = { research:"#3b7dd8", study:"#7c4dff", life:"#3ba366", outing:"#e8913a", other:"#6b7280" };
     return vals[c.key] ?? "#6b7280";
   }
 
-  /** Return all dates from start to end (inclusive). */
-  function dateRange(start: string, end: string): string[] {
-    const a = new Date(parseDate(start).y, parseDate(start).m, parseDate(start).d);
-    const b = new Date(parseDate(end).y, parseDate(end).m, parseDate(end).d);
-    const out: string[] = [];
-    for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) {
-      out.push(dateKey(d.getFullYear(), d.getMonth(), d.getDate()));
-    }
-    return out;
+  // ---------------------------------------------------------------------------
+  // Done state (localStorage, no login needed)
+  // ---------------------------------------------------------------------------
+  const DONE_KEY = "sched_done_v1";
+
+  function loadDone(): Record<string, number> {
+    try { return JSON.parse(localStorage.getItem(DONE_KEY) || "{}"); } catch { return {}; }
   }
+  function saveDone(map: Record<string, number>) { localStorage.setItem(DONE_KEY, JSON.stringify(map)); }
+
+  /** The done key for an entry on a given date. For non-period entries date is ignored. */
+  function doneKey(entry: ScheduleEntry, date: string): string {
+    return entry.isPeriod ? `${entry.id}_${date}` : (entry.id || entry.title);
+  }
+  /** Get done level for an entry on a date. */
+  function getDone(entry: ScheduleEntry, date: string): number {
+    return loadDone()[doneKey(entry, date)] || 0;
+  }
+  /** Toggle done: 0→1→2→0. Returns new level. */
+  function toggleDone(entry: ScheduleEntry, date: string): number {
+    const m = loadDone();
+    const k = doneKey(entry, date);
+    const cur = m[k] || 0;
+    const next = cur >= 2 ? 0 : cur + 1;
+    if (next === 0) delete m[k]; else m[k] = next;
+    saveDone(m);
+    return next;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Global entry rank (for consistent chip Y-order across cells)
+  // ---------------------------------------------------------------------------
+  let _globalRank: Map<string, number> = new Map();
+  let _rankDirty = true;
+
+  function computeGlobalRanks() {
+    if (!_rankDirty) return;
+    _globalRank = new Map();
+    let r = 0;
+    const plist = schedule.__periods__ || [];
+    for (const p of plist) {
+      if (!_globalRank.has(p.id)) _globalRank.set(p.id, r++);
+    }
+    // direct entries across all visible dates
+    for (let d = 1; d <= 31; d++) {
+      const cd = dateKey(viewYear, viewMonth, d);
+      const evts = schedule[cd] || [];
+      for (const e of evts) {
+        if (!_globalRank.has(e.id)) _globalRank.set(e.id, r++);
+      }
+    }
+    _rankDirty = false;
+  }
+
+  function entryRank(e: ScheduleEntry): number { return _globalRank.get(e.id || "") ?? 999; }
 
   // ---------------------------------------------------------------------------
   // State
@@ -468,14 +449,11 @@ function baseColor(cat: string): string {
 
   let schedule = JSON.parse(root.dataset.schedule || "{}") as Schedule;
   let todayStr = DEFAULT_TODAY;
-
   let viewYear = new Date().getFullYear();
   let viewMonth = new Date().getMonth();
   let selectedDate = DEFAULT_TODAY;
-
   let isAuthed = false;
 
-  // Refs
   const monthLabel = document.getElementById("month-label")!;
   const calBody = document.getElementById("cal-body")!;
   const agendaList = document.getElementById("agenda-list")!;
@@ -483,18 +461,27 @@ function baseColor(cat: string): string {
   const agendaTitle = document.getElementById("agenda-title")!;
   const editActions = document.getElementById("agenda-edit-actions")!;
   const loginBtn = document.getElementById("login-btn")!;
-
   const apiBase = root.dataset.api || "/api";
   const monthNames = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
   const dayNames = ["周日","周一","周二","周三","周四","周五","周六"];
 
-  function eventsFor(d: string): ScheduleEntry[] { return schedule[d] || []; }
+  function eventsFor(d: string): ScheduleEntry[] {
+    const direct = schedule[d] || [];
+    const periods = schedule.__periods__ || [];
+    const fromPeriods = periods
+      .filter((p: any) => p.start <= d && d <= p.end)
+      .map((p: any) => ({ id: p.id, time: p.time || "全天", title: p.title, category: p.category, color: p.color, isPeriod: true, done: p.done }));
+    return [...fromPeriods, ...direct];
+  }
+  function periods(): any[] { return schedule.__periods__ || []; }
 
   // ---------------------------------------------------------------------------
   // Calendar rendering
   // ---------------------------------------------------------------------------
   function renderCalendar() {
     monthLabel.textContent = `${viewYear} 年 ${monthNames[viewMonth]}`;
+    _rankDirty = true;
+    computeGlobalRanks();
 
     const firstDay = new Date(viewYear, viewMonth, 1);
     const firstWeekday = (firstDay.getDay() + 6) % 7;
@@ -502,9 +489,6 @@ function baseColor(cat: string): string {
     const prevDays = new Date(viewYear, viewMonth, 0).getDate();
     const totalLeading = firstWeekday;
     const totalCells = Math.ceil((totalLeading + daysInMonth) / 7) * 7;
-
-    const dayEvents = new Map<string, ScheduleEntry[]>();
-    const catCounts = new Map<string, Map<string, number>>(); // cellDate→cat→count
 
     let html = "";
     for (let i = 0; i < totalCells; i++) {
@@ -536,40 +520,28 @@ function baseColor(cat: string): string {
       }
 
       const evts = eventsFor(cellDate);
-      dayEvents.set(cellDate, evts);
+      // Sort by global rank for consistent Y position
+      const sorted = [...evts].sort((a, b) => entryRank(a) - entryRank(b));
 
-      // Group by category, assign shade indices
-      const catGroup = new Map<string, ScheduleEntry[]>();
-      for (const e of evts) {
-        const k = e.category || "other";
-        if (!catGroup.has(k)) catGroup.set(k, []);
-        catGroup.get(k)!.push(e);
-      }
-
-      // Compute per-category occurrence count for this day (for shade index)
-      const cc = new Map<string, number>();
-      for (const [cat, items] of catGroup) {
-        cc.set(cat, items.length);
-      }
-      catCounts.set(cellDate, cc);
-
-      // Build chips: up to 2, with shade variation
+      // Build chips (up to 3, periods always included)
       const chipsHtml: string[] = [];
-      for (const [cat, items] of catGroup) {
-        items.forEach((e, idx) => {
-          if (chipsHtml.length >= 2) return;
-          const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
-          const shade = customColor ? 0 : idx; // custom color = always same shade
-          const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
-          const style = customColor
-            ? `--chip-c:${e.color};--chip-t:${e.color}22;--chip-cb:${e.color};`
-            : chipColors(cat, shade);
-          const cls = "chip" + (allDay && e.category === "other" ? " all-day" : "");
-          chipsHtml.push(`<span class="${cls}" style="${style}">${escapeHtml(e.title)}</span>`);
-        });
-      }
-      const more = evts.length > 2
-        ? `<span class="chip" style="${chipColors("other", 0)}">+${evts.length - 2}</span>`
+      let maxChips = sorted.some(e => e.isPeriod) ? Math.max(3, sorted.length) : 2;
+      sorted.forEach((e, idx) => {
+        if (chipsHtml.length >= maxChips) return;
+        const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
+        const shade = customColor ? 0 : idx;
+        const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
+        const style = customColor
+          ? `--chip-c:${e.color};--chip-t:${e.color}22;--chip-cb:${e.color};`
+          : chipColors(e.category || "other", shade);
+        const doneLevel = getDone(e, cellDate);
+        const dCls = doneLevel === 1 ? " done-1" : doneLevel === 2 ? " done-2" : "";
+        const cls = "chip" + (allDay && e.category === "other" ? " all-day" : "") + dCls;
+        chipsHtml.push(`<span class="${cls}" style="${style}">${escapeHtml(e.title)}</span>`);
+      });
+      const remaining = sorted.length - chipsHtml.length;
+      const more = remaining > 0
+        ? `<span class="chip" style="${chipColors("other", 0)}">+${remaining}</span>`
         : "";
 
       html += `<div class="${cellClass}" data-date="${cellDate}">
@@ -602,7 +574,6 @@ function baseColor(cat: string): string {
     const isToday = selectedDate === todayStr;
     const dow = dayNames[dateObj.getDay()];
 
-    // Title: show date context
     agendaTitle.textContent = isToday ? "今日" : `${m + 1}月${d}日`;
     agendaCount.textContent = events.length ? `${events.length}项` : "";
 
@@ -612,10 +583,10 @@ function baseColor(cat: string): string {
       const sorted = [...events].sort((a, b) => {
         const aa = a.time === "全天" ? "" : a.time;
         const bb = b.time === "全天" ? "" : b.time;
-        return aa.localeCompare(bb);
+        if (aa !== bb) return aa.localeCompare(bb);
+        return entryRank(a) - entryRank(b);
       });
 
-      // Group by category to compute shade indices
       const catGroup = new Map<string, ScheduleEntry[]>();
       for (const e of sorted) {
         const k = e.category || "other";
@@ -623,24 +594,24 @@ function baseColor(cat: string): string {
         catGroup.get(k)!.push(e);
       }
       const shadeIdx = new Map<string, number>();
-      for (const [, items] of catGroup) {
-        items.forEach((e, i) => shadeIdx.set(e.id || "", i));
-      }
+      for (const [, items] of catGroup) items.forEach((e, i) => shadeIdx.set(e.id || "", i));
 
       agendaList.innerHTML = sorted.map((e) => {
         const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
         const cat = e.category || "other";
         const sIdx = shadeIdx.get(e.id || "") ?? 0;
         const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
-        const style = customColor
-          ? `--bar:${e.color};`
-          : chipColors(cat, sIdx);
-        return `<li class="agenda-item" data-id="${e.id || ""}">
+        const style = customColor ? `--bar:${e.color};` : chipColors(cat, sIdx);
+        const doneLevel = getDone(e, selectedDate);
+        const dCls = doneLevel === 1 ? " done-1" : doneLevel === 2 ? " done-2" : "";
+        const doneLabels = ["○", "◡", "✓"];
+        return `<li class="agenda-item${dCls}" data-id="${e.id || ""}" data-date="${selectedDate}">
           <div class="agenda-bar" style="${style}"></div>
           <div class="agenda-time${allDay ? " all-day" : ""}">${escapeHtml(e.time)}</div>
           <div class="agenda-body">
             <div class="agenda-title-text">${escapeHtml(e.title)}</div>
           </div>
+          <button class="done-btn done-${doneLevel}" data-act="done" title="完成状态">${doneLabels[doneLevel]}</button>
           <div class="ed-icons">
             <button class="ed-icon-btn" data-act="edit" title="编辑">&#9998;</button>
             <button class="ed-icon-btn" data-act="del" title="删除">&#10005;</button>
@@ -652,8 +623,27 @@ function baseColor(cat: string): string {
   }
 
   function wireAgendaActions() {
-    if (!isAuthed) return;
     agendaList.querySelectorAll<HTMLElement>(".agenda-item").forEach((li) => {
+      // done button — always active, no login needed
+      const doneBtn = li.querySelector<HTMLButtonElement>(".done-btn");
+      if (doneBtn) {
+        doneBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          const entryDate = li.dataset.date || selectedDate;
+          const id = li.dataset.id;
+          if (!id) return;
+          // Find the entry
+          const evts = eventsFor(entryDate);
+          const entry = evts.find(e => e.id === id);
+          if (!entry) return;
+          toggleDone(entry, entryDate);
+          renderAgenda();
+          renderCalendar(); // calendar chips update too
+        });
+      }
+
+      // edit / delete — admin only
+      if (!isAuthed) return;
       li.querySelectorAll<HTMLButtonElement>(".ed-icon-btn").forEach((b) => {
         b.addEventListener("click", (ev) => {
           ev.stopPropagation();
@@ -681,15 +671,11 @@ function baseColor(cat: string): string {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, entries }),
     });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(txt || `保存失败 (${res.status})`);
-    }
+    if (!res.ok) { const t = await res.text().catch(() => ""); throw new Error(t || `保存失败 (${res.status})`); }
     const data = await res.json();
     if (data.entries) schedule[date] = data.entries;
     else if (data.entries?.length === 0) delete schedule[date];
-    renderCalendar();
-    renderAgenda();
+    renderCalendar(); renderAgenda();
   }
 
   async function addOrUpdateEntry(date: string, entry: ScheduleEntry) {
@@ -702,6 +688,17 @@ function baseColor(cat: string): string {
 
   async function deleteEntry(date: string, id: string) {
     const fresh = (schedule[date] || []).filter((e) => e.id !== id);
+    // also check period entries
+    const plist = schedule.__periods__ || [];
+    if (plist.find((p: any) => p.id === id)) {
+      schedule.__periods__ = plist.filter((p: any) => p.id !== id);
+      await fetch(`${apiBase}/schedule/saveAll`, {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule }),
+      });
+      renderCalendar(); renderAgenda(); return;
+    }
     await saveDate(date, fresh);
   }
 
@@ -715,38 +712,19 @@ function baseColor(cat: string): string {
   const loginCancel = document.getElementById("login-cancel")!;
 
   loginBtn.addEventListener("click", () => {
-    if (isAuthed) {
-      fetch(`${apiBase}/logout`, { method: "POST", credentials: "same-origin" }).catch(() => {});
-      setAuthed(false);
-    } else {
-      loginError.hidden = true;
-      loginDlg.showModal();
-      setTimeout(() => loginPassword.focus(), 50);
-    }
+    if (isAuthed) { fetch(`${apiBase}/logout`, { method:"POST", credentials:"same-origin" }).catch(()=>{}); setAuthed(false); }
+    else { loginError.hidden = true; loginDlg.showModal(); setTimeout(() => loginPassword.focus(), 50); }
   });
   loginCancel.addEventListener("click", () => loginDlg.close());
-
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const fd = new FormData(loginForm);
-    const password = String(fd.get("password") || "");
+    const password = String(new FormData(loginForm).get("password") || "");
     loginError.hidden = true;
     try {
-      const res = await fetch(`${apiBase}/login`, {
-        method: "POST", credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        loginError.textContent = data.error || "登录失败";
-        loginError.hidden = false; return;
-      }
+      const res = await fetch(`${apiBase}/login`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body: JSON.stringify({password}) });
+      if (!res.ok) { const data = await res.json().catch(()=>({})); loginError.textContent = data.error || "登录失败"; loginError.hidden = false; return; }
       loginDlg.close(); loginForm.reset(); setAuthed(true);
-    } catch (err: any) {
-      loginError.textContent = err?.message || "网络错误";
-      loginError.hidden = false;
-    }
+    } catch (err: any) { loginError.textContent = err?.message || "网络错误"; loginError.hidden = false; }
   });
 
   function setAuthed(v: boolean) {
@@ -776,8 +754,6 @@ function baseColor(cat: string): string {
   const editDelete = document.getElementById("edit-delete")!;
   const editCancel = document.getElementById("edit-cancel")!;
   const resetColor = document.getElementById("reset-color")!;
-
-  // Mode tabs
   const modeTabs = document.querySelectorAll<HTMLButtonElement>(".mode-tab");
   const singleFields = document.getElementById("single-fields")!;
   const periodFields = document.getElementById("period-fields")!;
@@ -793,7 +769,6 @@ function baseColor(cat: string): string {
     });
   });
 
-  // Category picker
   const catPicker = document.getElementById("cat-picker")!;
   function renderCatPicker(activeCat: string) {
     catPicker.innerHTML = CATS.map((p) => {
@@ -805,47 +780,50 @@ function baseColor(cat: string): string {
         catPicker.querySelectorAll(".cat-swatch").forEach((x) => x.classList.remove("is-active"));
         b.classList.add("is-active");
         editCategory.value = b.dataset.cat || "other";
-        // Auto-update color to category default
         editColor.value = baseHex(editCategory.value);
       });
     });
   }
 
-  // Reset color
-  resetColor.addEventListener("click", () => {
-    editColor.value = baseHex(editCategory.value);
-  });
+  resetColor.addEventListener("click", () => { editColor.value = baseHex(editCategory.value); });
 
   function openEditDialog(date: string, id?: string) {
     editError.hidden = true;
     currentMode = "single";
     modeTabs.forEach((t) => t.classList.toggle("is-active", t.dataset.mode === "single"));
-    singleFields.hidden = false;
-    periodFields.hidden = true;
+    singleFields.hidden = false; periodFields.hidden = true;
     editDate.value = date;
 
     if (id) {
+      const periodList = schedule.__periods__ || [];
+      const pEntry = periodList.find((p: any) => p.id === id);
+      if (pEntry) {
+        currentMode = "period";
+        modeTabs.forEach((t) => t.classList.toggle("is-active", t.dataset.mode === "period"));
+        singleFields.hidden = true; periodFields.hidden = false;
+        editId.value = pEntry.id || "";
+        editStartDate.value = pEntry.start || date;
+        editEndDate.value = pEntry.end || date;
+        editTime.value = pEntry.time || "全天";
+        editTitleInput.value = pEntry.title;
+        editCategory.value = pEntry.category || "other";
+        editColor.value = pEntry.color || baseHex(pEntry.category || "other");
+        editTitleH.textContent = "编辑周期规划"; editDelete.hidden = false;
+        renderCatPicker(editCategory.value); editDlg.showModal(); return;
+      }
       const e = (schedule[date] || []).find((x) => x.id === id);
       if (!e) return;
-      editId.value = e.id || "";
-      editTime.value = e.time;
-      editTitleInput.value = e.title;
-      editCategory.value = e.category || "other";
+      editId.value = e.id || ""; editTime.value = e.time; editTitleInput.value = e.title;
+      editDate.value = date; editCategory.value = e.category || "other";
       editColor.value = e.color || baseHex(e.category || "other");
-      editTitleH.textContent = "编辑日程";
-      editDelete.hidden = false;
+      editTitleH.textContent = "编辑日程"; editDelete.hidden = false;
     } else {
-      editId.value = "";
-      editTime.value = "10:00";
-      editTitleInput.value = "";
-      editCategory.value = "other";
-      editColor.value = baseHex("other");
-      editTitleH.textContent = "新增日程";
-      editDelete.hidden = true;
+      editId.value = ""; editTime.value = "10:00"; editTitleInput.value = "";
+      editCategory.value = "other"; editColor.value = baseHex("other");
+      editDate.value = date; editStartDate.value = date; editEndDate.value = date;
+      editTitleH.textContent = "新增日程"; editDelete.hidden = true;
     }
-    renderCatPicker(editCategory.value);
-    editDlg.showModal();
-    setTimeout(() => editTime.focus(), 50);
+    renderCatPicker(editCategory.value); editDlg.showModal(); setTimeout(() => editTime.focus(), 50);
   }
 
   document.getElementById("add-btn")?.addEventListener("click", () => openEditDialog(selectedDate));
@@ -855,124 +833,75 @@ function baseColor(cat: string): string {
     const id = editId.value;
     if (!id || !confirm("删除该条日程？")) return;
     editDlg.close();
-    try { await deleteEntry(editDate.value, id); }
-    catch (err: any) { alert(err?.message || "删除失败"); }
+    try {
+      const plist = schedule.__periods__ || [];
+      if (plist.find((p: any) => p.id === id)) {
+        schedule.__periods__ = plist.filter((p: any) => p.id !== id);
+        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        renderCalendar(); renderAgenda(); return;
+      }
+      await deleteEntry(editDate.value, id);
+    } catch (err: any) { alert(err?.message || "删除失败"); }
   });
 
   editForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!editTitleInput.value.trim()) {
-      editError.textContent = "请填写标题"; editError.hidden = false; return;
-    }
+    if (!editTitleInput.value.trim()) { editError.textContent = "请填写标题"; editError.hidden = false; return; }
     const color = editColor.value;
     const colorVal = color && color !== baseHex(editCategory.value) ? color : undefined;
-
     const baseEntry: ScheduleEntry = {
-      time: editTime.value.trim() || "全天",
-      title: editTitleInput.value.trim(),
-      category: editCategory.value,
-      color: colorVal,
+      time: editTime.value.trim() || "全天", title: editTitleInput.value.trim(),
+      category: editCategory.value, color: colorVal,
     };
-
     try {
       if (currentMode === "single") {
         const date = editDate.value;
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          editError.textContent = "日期格式错误"; editError.hidden = false; return;
-        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { editError.textContent = "日期格式错误"; editError.hidden = false; return; }
         const entry = { ...baseEntry, id: editId.value || genId() };
         await addOrUpdateEntry(date, entry);
         if (date !== selectedDate) {
-          selectedDate = date;
-          const { y, m } = parseDate(date);
+          selectedDate = date; const { y, m } = parseDate(date);
           if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
           renderCalendar();
         }
       } else {
-        // Period mode
-        const start = editStartDate.value;
-        const end = editEndDate.value;
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
-          editError.textContent = "日期格式错误"; editError.hidden = false; return;
-        }
-        if (end < start) {
-          editError.textContent = "结束日期不能早于开始日期"; editError.hidden = false; return;
-        }
-        const dates = dateRange(start, end);
-        for (const date of dates) {
-          const entry = { ...baseEntry, id: genId() };
-          await addOrUpdateEntry(date, entry);
-        }
-        // Navigate to start date
-        selectedDate = start;
-        const { y, m } = parseDate(start);
+        const start = editStartDate.value; const end = editEndDate.value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) { editError.textContent = "日期格式错误"; editError.hidden = false; return; }
+        if (end < start) { editError.textContent = "结束日期不能早于开始日期"; editError.hidden = false; return; }
+        const periodEntry = { id: editId.value || genId(), start, end, time: baseEntry.time, title: baseEntry.title, category: baseEntry.category, color: baseEntry.color, done: 0 };
+        const plist = [...(schedule.__periods__ || [])];
+        const pIdx = plist.findIndex((p: any) => p.id === periodEntry.id);
+        if (pIdx >= 0) plist[pIdx] = periodEntry;
+        else plist.push(periodEntry);
+        schedule.__periods__ = plist;
+        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(txt || "保存失败"); }
+        selectedDate = start; const { y, m } = parseDate(start);
         if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
         renderCalendar();
       }
-      editDlg.close();
-      renderAgenda();
-    } catch (err: any) {
-      editError.textContent = err?.message || "保存失败";
-      editError.hidden = false;
-    }
+      editDlg.close(); renderAgenda();
+    } catch (err: any) { editError.textContent = err?.message || "保存失败"; editError.hidden = false; }
   });
 
   // ---------------------------------------------------------------------------
   // Navigation
   // ---------------------------------------------------------------------------
-  document.getElementById("prev-month")?.addEventListener("click", () => {
-    if (viewMonth === 0) { viewMonth = 11; viewYear--; } else { viewMonth--; }
-    renderCalendar();
-  });
-  document.getElementById("next-month")?.addEventListener("click", () => {
-    if (viewMonth === 11) { viewMonth = 0; viewYear++; } else { viewMonth++; }
-    renderCalendar();
-  });
-  document.getElementById("today-btn")?.addEventListener("click", () => {
-    const now = new Date();
-    viewYear = now.getFullYear(); viewMonth = now.getMonth();
-    selectedDate = todayStr;
-    renderCalendar(); renderAgenda();
-  });
+  document.getElementById("prev-month")?.addEventListener("click", () => { if (viewMonth === 0) { viewMonth = 11; viewYear--; } else viewMonth--; renderCalendar(); renderAgenda(); });
+  document.getElementById("next-month")?.addEventListener("click", () => { if (viewMonth === 11) { viewMonth = 0; viewYear++; } else viewMonth++; renderCalendar(); renderAgenda(); });
+  document.getElementById("today-btn")?.addEventListener("click", () => { const n=new Date(); viewYear=n.getFullYear(); viewMonth=n.getMonth(); selectedDate=todayStr; renderCalendar(); renderAgenda(); });
+  document.getElementById("prev-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()-1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); });
+  document.getElementById("next-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()+1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); });
 
-  // Day navigation (agenda)
-  document.getElementById("prev-day")?.addEventListener("click", () => {
-    const { y, m, d } = parseDate(selectedDate);
-    const cur = new Date(y, m, d);
-    cur.setDate(cur.getDate() - 1);
-    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
-      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
-    }
-    renderCalendar(); renderAgenda();
-  });
-  document.getElementById("next-day")?.addEventListener("click", () => {
-    const { y, m, d } = parseDate(selectedDate);
-    const cur = new Date(y, m, d);
-    cur.setDate(cur.getDate() + 1);
-    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
-      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
-    }
-    renderCalendar(); renderAgenda();
-  });
-
-  // Keyboard
   document.addEventListener("keydown", (e) => {
     if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
-    if ((document.querySelector("dialog[open]")) !== null) return;
-    const { y, m, d } = parseDate(selectedDate || todayStr);
-    const cur = new Date(y, m, d);
-    if (e.key === "ArrowLeft") cur.setDate(cur.getDate() - 1);
-    else if (e.key === "ArrowRight") cur.setDate(cur.getDate() + 1);
-    else if (e.key === "ArrowUp") cur.setDate(cur.getDate() - 7);
-    else if (e.key === "ArrowDown") cur.setDate(cur.getDate() + 7);
+    if (document.querySelector("dialog[open]")) return;
+    const {y,m,d}=parseDate(selectedDate||todayStr); const c=new Date(y,m,d);
+    if (e.key==="ArrowLeft") c.setDate(c.getDate()-1); else if (e.key==="ArrowRight") c.setDate(c.getDate()+1);
+    else if (e.key==="ArrowUp") c.setDate(c.getDate()-7); else if (e.key==="ArrowDown") c.setDate(c.getDate()+7);
     else return;
-    e.preventDefault();
-    selectedDate = dateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-    if (cur.getFullYear() !== viewYear || cur.getMonth() !== viewMonth) {
-      viewYear = cur.getFullYear(); viewMonth = cur.getMonth();
-    }
+    e.preventDefault(); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate());
+    if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); }
     renderCalendar(); renderAgenda();
   });
 
@@ -983,40 +912,20 @@ function baseColor(cat: string): string {
   async function refreshFromServer() {
     try {
       const res = await fetch(`${apiBase}/schedule`, { credentials: "same-origin" });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); }
-      }
+      if (res.ok) { const data = await res.json(); if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); } }
     } catch { /* ignore */ }
   }
 
   setInterval(() => {
-    const now = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
-    }).format(new Date());
-    if (now !== lastDay) {
-      lastDay = now; todayStr = now;
-      if (selectedDate && selectedDate !== todayStr) {
-        const np = new Date();
-        if (np.getFullYear() !== viewYear || np.getMonth() !== viewMonth) {
-          viewYear = np.getFullYear(); viewMonth = np.getMonth();
-        }
-        selectedDate = todayStr;
-        renderCalendar(); renderAgenda();
-      }
-    }
-  }, 60_000);
+    const now = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    if (now !== lastDay) { lastDay = now; todayStr = now; if (selectedDate && selectedDate !== todayStr) { const np = new Date(); if (np.getFullYear() !== viewYear || np.getMonth() !== viewMonth) { viewYear = np.getFullYear(); viewMonth = np.getMonth(); } selectedDate = todayStr; renderCalendar(); renderAgenda(); } }
+  }, 60000);
 
   refreshFromServer();
-  setInterval(refreshFromServer, 5 * 60_000);
+  setInterval(refreshFromServer, 5 * 60000);
 
-  // Auth probe
-  fetch(`${apiBase}/auth/check`, { credentials: "same-origin" })
-    .then((r) => r.ok ? r.json() : Promise.reject())
-    .then(() => setAuthed(true))
-    .catch(() => setAuthed(false));
+  fetch(`${apiBase}/auth/check`, { credentials: "same-origin" }).then(r => r.ok ? r.json() : Promise.reject()).then(() => setAuthed(true)).catch(() => setAuthed(false));
 
-  // Boot
   renderCalendar();
   renderAgenda();
 </script>
