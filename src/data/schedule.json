@@ -3,32 +3,32 @@
     {
       "id": "e11a",
       "time": "10:00",
-      "title": "团队周会",
+      "title": "å¢éå¨ä¼",
       "category": "research"
     },
     {
       "id": "e11b",
       "time": "14:00",
-      "title": "智能预测+优化 论文精读",
+      "title": "æºè½é¢æµ+ä¼å è®ºæç²¾è¯»",
       "category": "study"
     }
   ],
   "2026-07-12": [
     {
-      "time": "全天",
-      "title": "项目中期报告截止",
+      "time": "å¨å¤©",
+      "title": "é¡¹ç®ä¸­ææ¥åæªæ­¢",
       "category": "research",
       "id": "e12a"
     },
     {
       "time": "15:00",
-      "title": "与导师一对一讨论",
+      "title": "ä¸å¯¼å¸ä¸å¯¹ä¸è®¨è®º",
       "category": "research",
       "id": "e12b"
     },
     {
       "time": "19:30",
-      "title": "健身房",
+      "title": "å¥èº«æ¿",
       "category": "life",
       "id": "e12c"
     }
@@ -37,13 +37,13 @@
     {
       "id": "e14a",
       "time": "09:00",
-      "title": "线性代数复习",
+      "title": "çº¿æ§ä»£æ°å¤ä¹ ",
       "category": "study"
     },
     {
       "id": "e14b",
       "time": "15:00",
-      "title": "去中关村修电脑",
+      "title": "å»ä¸­å³æä¿®çµè",
       "category": "outing"
     }
   ],
@@ -51,19 +51,19 @@
     {
       "id": "e15a",
       "time": "09:30",
-      "title": "论文小组讨论",
+      "title": "è®ºæå°ç»è®¨è®º",
       "category": "study"
     },
     {
       "id": "e15b",
       "time": "14:00",
-      "title": "算法实现进度同步",
+      "title": "ç®æ³å®ç°è¿åº¦åæ­¥",
       "category": "research"
     },
     {
       "id": "e15c",
       "time": "20:00",
-      "title": "看纪录片",
+      "title": "ççºªå½ç",
       "category": "life"
     }
   ],
@@ -71,21 +71,21 @@
     {
       "id": "e18a",
       "time": "08:00",
-      "title": "晨会 — 本周回顾",
+      "title": "æ¨ä¼ â æ¬å¨åé¡¾",
       "category": "research"
     },
     {
       "id": "e18b",
       "time": "11:00",
-      "title": "代码审查会议",
+      "title": "ä»£ç å®¡æ¥ä¼è®®",
       "category": "research"
     }
   ],
   "2026-07-19": [
     {
       "id": "e19a",
-      "time": "全天",
-      "title": "去颐和园",
+      "time": "å¨å¤©",
+      "title": "å»é¢åå­",
       "category": "outing"
     }
   ],
@@ -93,13 +93,13 @@
     {
       "id": "e22a",
       "time": "13:00",
-      "title": "运筹学研讨班",
+      "title": "è¿ç­¹å­¦ç è®¨ç­",
       "category": "study"
     },
     {
       "id": "e22b",
       "time": "16:30",
-      "title": "跑步",
+      "title": "è·æ­¥",
       "category": "life"
     }
   ],
@@ -107,13 +107,13 @@
     {
       "id": "e25a",
       "time": "10:00",
-      "title": "组会汇报",
+      "title": "ç»ä¼æ±æ¥",
       "category": "research"
     },
     {
       "id": "e25b",
       "time": "19:00",
-      "title": "与朋友聚餐",
+      "title": "ä¸æåèé¤",
       "category": "outing"
     }
   ],
@@ -121,50 +121,56 @@
     {
       "id": "e28a",
       "time": "09:00",
-      "title": "Summer School 注册截止",
+      "title": "Summer School æ³¨åæªæ­¢",
       "category": "other"
     }
   ],
   "2026-07-30": [
     {
       "id": "e30a",
-      "time": "全天",
-      "title": "月末报告提交",
+      "time": "å¨å¤©",
+      "title": "ææ«æ¥åæäº¤",
       "category": "research"
     },
     {
       "id": "e30b",
       "time": "15:00",
-      "title": "整理实验室设备",
+      "title": "æ´çå®éªå®¤è®¾å¤",
       "category": "life"
-    }
-  ],
-  "2026-07-13": [
-    {
-      "time": "全天",
-      "title": "项目中期报告截止",
-      "category": "research",
-      "id": "emrgmb4oof0ejxw"
     }
   ],
   "2026-07-09": [
     {
-      "time": "全天",
-      "title": "项目中期报告截止",
+      "time": "å¨å¤©",
+      "title": "é¡¹ç®ä¸­ææ¥åæªæ­¢",
       "category": "life",
       "id": "emrgmc13s7n3hlo"
     }
   ],
   "2026-07-10": [
     {
-      "time": "全天",
-      "title": "项目中期报告截止",
+      "time": "å¨å¤©",
+      "title": "é¡¹ç®ä¸­ææ¥åæªæ­¢",
       "category": "life",
       "id": "emrgmc1dq4i4jyk"
     }
   ],
   "__periods__": [
-    { "id": "per1", "title": "暑期学校", "start": "2026-07-14", "end": "2026-07-18", "time": "全天", "category": "study" },
-    { "id": "per2", "title": "项目冲刺周", "start": "2026-07-22", "end": "2026-07-25", "time": "全天", "category": "research" }
+    {
+      "id": "per1",
+      "title": "ææå­¦æ ¡",
+      "start": "2026-07-14",
+      "end": "2026-07-18",
+      "time": "å¨å¤©",
+      "category": "study"
+    },
+    {
+      "id": "per2",
+      "title": "é¡¹ç®å²åºå¨",
+      "start": "2026-07-22",
+      "end": "2026-07-25",
+      "time": "å¨å¤©",
+      "category": "research"
+    }
   ]
 }
