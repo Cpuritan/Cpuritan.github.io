@@ -15,6 +15,7 @@ const categories = [
   { key: "study",    zh: "学习", h: "270", s: "55" },
   { key: "life",     zh: "生活", h: "145", s: "45" },
   { key: "outing",   zh: "外出", h: "30",  s: "75" },
+  { key: "ddl",      zh: "DDL",  h: "0",   s: "70" },
   { key: "other",    zh: "其他", h: "0",   s: "0"  },
 ] as const;
 
@@ -406,7 +407,7 @@ function baseColor(cat: string): string {
   function baseHex(cat: string): string {
     const c = CATS.find((x) => x.key === (cat || "other"));
     if (!c) return "#6b7280";
-    const vals: Record<string,string> = { research:"#3b7dd8", study:"#7c4dff", life:"#3ba366", outing:"#e8913a", other:"#6b7280" };
+    const vals: Record<string,string> = { research:"#3b7dd8", study:"#7c4dff", life:"#3ba366", outing:"#e8913a", ddl:"#dc2626", other:"#6b7280" };
     return vals[c.key] ?? "#6b7280";
   }
 
@@ -1027,6 +1028,10 @@ function baseColor(cat: string): string {
       currentMode = tab.dataset.mode as "single" | "period";
       singleFields.hidden = currentMode !== "single";
       periodFields.hidden = currentMode !== "period";
+      // When switching to period mode, default time to 全天;
+      // when switching back to single, restore a reasonable default.
+      if (currentMode === "period" && !editId.value) editTime.value = "全天";
+      if (currentMode === "single" && !editId.value) editTime.value = "10:00";
     });
   });
 
@@ -1079,9 +1084,11 @@ function baseColor(cat: string): string {
       editColor.value = e.color || baseHex(e.category || "other");
       editTitleH.textContent = "编辑日程"; editDelete.hidden = false;
     } else {
-      editId.value = ""; editTime.value = "10:00"; editTitleInput.value = "";
+      editId.value = ""; editTitleInput.value = "";
       editCategory.value = "other"; editColor.value = baseHex("other");
       editDate.value = date; editStartDate.value = date; editEndDate.value = date;
+      // New entry: if currently in period mode default to 全天, else 10:00.
+      editTime.value = currentMode === "period" ? "全天" : "10:00";
       editTitleH.textContent = "新增日程"; editDelete.hidden = true;
     }
     renderCatPicker(editCategory.value); editDlg.showModal(); setTimeout(() => editTime.focus(), 50);

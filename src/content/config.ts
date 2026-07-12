@@ -21,11 +21,6 @@ const musings = defineCollection({
   schema: postSchema
 });
 
-const oralSkills = defineCollection({
-  type: "content",
-  schema: postSchema
-});
-
 const site = defineCollection({
   type: "content",
   schema: z.object({
@@ -34,4 +29,4 @@ const site = defineCollection({
   })
 });
 
-export const collections = { blog, musings, oralSkills, site };
+export const collections = { blog, musings, site };
