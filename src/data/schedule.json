@@ -15,12 +15,6 @@
   ],
   "2026-07-12": [
     {
-      "time": "全天",
-      "title": "项目中期报告截止",
-      "category": "research",
-      "id": "e12a"
-    },
-    {
       "time": "15:00",
       "title": "与导师一对一讨论",
       "category": "research",
@@ -179,14 +173,6 @@
       "end": "2026-07-25",
       "time": "全天",
       "category": "research"
-    }
-  ],
-  "2026-07-13": [
-    {
-      "time": "全天",
-      "title": "项目中期报告截止",
-      "category": "research",
-      "id": "emrgmb4oof0ejxw"
     }
   ]
 }
