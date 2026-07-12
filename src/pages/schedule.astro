@@ -847,7 +847,7 @@ function baseColor(cat: string): string {
   // ---------------------------------------------------------------------------
   async function saveDate(date: string, entries: ScheduleEntry[]) {
     const res = await fetch(`${apiBase}/schedule/save`, {
-      method: "POST", credentials: "include",
+      method: "POST", credentials: "omit",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, entries }),
     });
@@ -873,7 +873,7 @@ function baseColor(cat: string): string {
     if (plist.find((p: any) => p.id === id)) {
       schedule.__periods__ = plist.filter((p: any) => p.id !== id);
       await fetch(`${apiBase}/schedule/saveAll`, {
-        method: "POST", credentials: "include",
+        method: "POST", credentials: "omit",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ schedule }),
       });
@@ -1059,7 +1059,7 @@ function baseColor(cat: string): string {
       const plist = schedule.__periods__ || [];
       if (plist.find((p: any) => p.id === id)) {
         schedule.__periods__ = plist.filter((p: any) => p.id !== id);
-        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"omit", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
         renderCalendar(); renderAgenda(); return;
       }
       await deleteEntry(editDate.value, id);
@@ -1096,7 +1096,7 @@ function baseColor(cat: string): string {
         if (pIdx >= 0) plist[pIdx] = periodEntry;
         else plist.push(periodEntry);
         schedule.__periods__ = plist;
-        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"omit", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
         if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(txt || "保存失败"); }
         selectedDate = start; const { y, m } = parseDate(start);
         if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
@@ -1133,7 +1133,7 @@ function baseColor(cat: string): string {
   let lastDay = todayStr;
   async function refreshFromServer() {
     try {
-      const res = await fetch(`${apiBase}/schedule`, { credentials: "include" });
+      const res = await fetch(`${apiBase}/schedule`, { credentials: "omit" });
       if (res.ok) { const data = await res.json(); if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); } }
     } catch { /* ignore */ }
   }
