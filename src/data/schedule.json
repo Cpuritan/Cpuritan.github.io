@@ -1,3 +1,13 @@
 {
-  "__periods__": []
+  "__periods__": [
+    {
+      "id": "emrhlgsbsp9bl87",
+      "start": "2026-07-12",
+      "end": "2026-07-15",
+      "time": "全天",
+      "title": "TRE论文",
+      "category": "research",
+      "done": 0
+    }
+  ]
 }
