@@ -2,13 +2,36 @@
 
 const REPO = { owner: "Cpuritan", name: "Cpuritan.github.io", path: "src/data/schedule.json", branch: "main" };
 
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+// Origin allow-list — only these sites may talk to the Worker. The browser's
+// CORS spec forbids `Access-Control-Allow-Origin: *` together with
+// `credentials: "include"`, so we must echo the precise origin back.
+const ALLOWED_ORIGINS = new Set([
+  "https://cpuritan.cn",
+  "https://www.cpuritan.cn",
+  "http://localhost:4321", // astro dev server
+  "http://127.0.0.1:4321",
+  "http://localhost:3010", // direct express dev
+  "http://127.0.0.1:3010",
+]);
 
-function ok(body) {
-  return new Response(JSON.stringify(body), { status: 200, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8" } });
+function corsHeaders(req) {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : "";
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
 }
-function fail(status, msg) {
-  return new Response(JSON.stringify({ error: msg }), { status, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8" } });
+
+function jsonResponse(body, status, cors) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json; charset=utf-8" },
+  });
 }
 
 async function ghGet(token, env) {
@@ -35,46 +58,55 @@ async function ghPut(token, env, content, sha, msg) {
 
 export default {
   async fetch(req, env) {
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    if (!env.GH_TOKEN) return fail(500, "Worker missing GH_TOKEN secret");
+    const cors = corsHeaders(req);
+
+    // CORS preflight
+    if (req.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: cors });
+    }
+
+    // Reject any cross-origin request from a non-allowlisted origin.
+    // Same-origin (no Origin header, e.g. curl) is allowed.
+    const origin = req.headers.get("Origin") || "";
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+      return jsonResponse({ error: "Origin not allowed" }, 403, cors);
+    }
+
+    if (!env.GH_TOKEN) return jsonResponse({ error: "Worker missing GH_TOKEN secret" }, 500, cors);
 
     const url = new URL(req.url);
     try {
-      // health
-      if (url.pathname === "/api/health") return ok({ ok: true });
+      if (url.pathname === "/api/health") return jsonResponse({ ok: true }, 200, cors);
 
-      // GET schedule
       if (url.pathname === "/api/schedule" && req.method === "GET") {
         const { content } = await ghGet(env.GH_TOKEN, env);
-        return ok(content);
+        return jsonResponse(content, 200, cors);
       }
 
-      // Save single date
       if (url.pathname === "/api/schedule/save" && req.method === "POST") {
         const { date, entries } = await req.json();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail(400, "Invalid date");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return jsonResponse({ error: "Invalid date" }, 400, cors);
         const { sha, content } = await ghGet(env.GH_TOKEN, env);
         const arr = Array.isArray(entries) ? entries : [];
         if (arr.length === 0) delete content[date]; else content[date] = arr;
         await ghPut(env.GH_TOKEN, env, content, sha, `schedule: update ${date}`);
-        return ok({ success: true, date });
+        return jsonResponse({ success: true, date }, 200, cors);
       }
 
-      // Save all
       if (url.pathname === "/api/schedule/saveAll" && req.method === "POST") {
         const { schedule } = await req.json();
-        if (typeof schedule !== "object" || !schedule) return fail(400, "Invalid schedule object");
+        if (typeof schedule !== "object" || !schedule) return jsonResponse({ error: "Invalid schedule object" }, 400, cors);
         const { sha, content } = await ghGet(env.GH_TOKEN, env);
         for (const [k, v] of Object.entries(schedule)) {
           if (k === "__periods__" || /^\d{4}-\d{2}-\d{2}$/.test(k)) content[k] = v;
         }
         await ghPut(env.GH_TOKEN, env, content, sha, "schedule: bulk update");
-        return ok({ success: true });
+        return jsonResponse({ success: true }, 200, cors);
       }
 
-      return fail(404, "Not found");
+      return jsonResponse({ error: "Not found" }, 404, cors);
     } catch (err) {
-      return fail(500, err?.message || "Worker error");
+      return jsonResponse({ error: err?.message || "Worker error" }, 500, cors);
     }
   },
 };

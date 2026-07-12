@@ -676,11 +676,13 @@ function baseColor(cat: string): string {
         ? `<span class="chip-spacer" style="height:${bandSlotCount * 22}px;flex:0 0 auto;"></span>`
         : "";
 
-      // Max 4 chips, then ellipsis
+      // Max total chip elements per cell (including "+N").
       const MAX_CHIPS = 4;
       const chipsHtml: string[] = [];
-      sorted.forEach((e, idx) => {
-        if (chipsHtml.length >= MAX_CHIPS) return;
+      // How many task chips to render: at most MAX_CHIPS-1 if there's overflow
+      const renderCount = sorted.length > MAX_CHIPS ? MAX_CHIPS - 1 : sorted.length;
+      for (let idx = 0; idx < renderCount; idx++) {
+        const e = sorted[idx];
         const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
         const shade = customColor ? 0 : idx;
         const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
@@ -691,7 +693,7 @@ function baseColor(cat: string): string {
         const dCls = doneLevel === 1 ? " done-1" : doneLevel === 2 ? " done-2" : "";
         const cls = "chip" + (allDay && e.category === "other" ? " all-day" : "") + dCls;
         chipsHtml.push(`<span class="${cls}" style="${style}">${escapeHtml(e.title)}</span>`);
-      });
+      }
       const remaining = sorted.length - chipsHtml.length;
       const more = remaining > 0
         ? `<span class="chip" style="${chipColors("other", 0)}">+${remaining}</span>`
