@@ -1,3 +1,41 @@
 {
-  "__periods__": []
+  "__periods__": [
+    {
+      "id": "emrhlgsbsp9bl87",
+      "start": "2026-07-12",
+      "end": "2026-07-15",
+      "time": "全天",
+      "title": "TRE论文",
+      "category": "research",
+      "done": 0
+    }
+  ],
+  "2026-07-12": [
+    {
+      "time": "20:00",
+      "title": "完成算法设计",
+      "category": "research",
+      "id": "emrhlhgyq4apu7k"
+    },
+    {
+      "time": "23:00",
+      "title": "夜跑",
+      "category": "life",
+      "id": "emrhlj4saoax4t7"
+    },
+    {
+      "time": "21:00",
+      "title": "算法实验测试",
+      "category": "research",
+      "id": "emrhquykmccr2jv"
+    }
+  ],
+  "2026-07-20": [
+    {
+      "time": "10:00",
+      "title": "ESWA截止",
+      "category": "ddl",
+      "id": "emrhlidsk0t0cq6"
+    }
+  ]
 }
