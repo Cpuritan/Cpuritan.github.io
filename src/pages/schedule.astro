@@ -469,14 +469,19 @@ function baseColor(cat: string): string {
      the calendar + right column side-by-side at the unified 920px page width
      (~920 - some gap/padding ≈ 768). Below this, the right column (agenda +
      musings) flows under the calendar — both on tablets-on-shrink and phones. */
+  /* Tablet / narrow — keep 4 chips visible by scaling everything down */
   @media (max-width: 768px) {
     .sched-grid { grid-template-columns: 1fr; }
-    .cal-cell { height: 96px; padding: 0.25rem 0.25rem 0.15rem; }
+    .cal-cell { height: 96px; padding: 0.3rem 0.25rem 0.2rem; gap: 0.12rem; }
+    .cal-cell .day-num { width: 1.3rem; height: 1.3rem; font-size: 0.72rem; margin-bottom: 0.04rem; border-radius: 6px; }
+    .cal-cell .chip { font-size: 0.62rem; line-height: 1.3; padding: 0.02rem 0.25rem; border-left-width: 2px; }
     .tb-label { min-width: 5rem; font-size: 0.82rem; }
   }
   @media (max-width: 560px) {
     .page-shell:has(.sched-page) { padding: 1rem 0.6rem 2.4rem; }
-    .cal-cell { height: 84px; }
+    .cal-cell { height: 84px; padding: 0.2rem 0.2rem 0.12rem; gap: 0.1rem; }
+    .cal-cell .day-num { width: 1.1rem; height: 1.1rem; font-size: 0.65rem; margin-bottom: 0.02rem; border-radius: 5px; }
+    .cal-cell .chip { font-size: 0.54rem; line-height: 1.2; padding: 0.01rem 0.2rem; border-left-width: 1.5px; }
   }
 </style>
 
@@ -659,6 +664,10 @@ function baseColor(cat: string): string {
     // Measure real cell positions (absolute coords relative to calBody).
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const cellHPad = 0.35 * rem;
+    // Vertical geometry for period bands, in pixels but derived from rem so
+    // they scale with the chip/day-num sizes set in @media queries.
+    const bandBaseOff = 2.25 * rem;   // ≈ 36px on default 16rem root
+    const bandRowH = 1.3 * rem;       // ≈ 20.8px, matches .chip-spacer (1.3rem)
 
     for (let slotIdx = 0; slotIdx < plist.length; slotIdx++) {
       const p = plist[slotIdx];
@@ -666,16 +675,20 @@ function baseColor(cat: string): string {
       const segEnd = dateCmp(p.end, viewEnd) > 0 ? viewEnd : p.end;
       if (dateCmp(segStart, segEnd) > 0) continue;
 
-      // Build segments by walking days and splitting on row change.
-      const segs: { rowIdx: number; startDate: string; endDate: string }[] = [];
+      // Build segments by walking days and splitting on row change OR
+      // done-level change. A row change splits because the band is a single
+      // horizontal bar; a done-level change splits so the user can mark a
+      // single mid-range date as done and see the band visually break there.
+      const segs: { rowIdx: number; startDate: string; endDate: string; doneLevel: number }[] = [];
       let cur = segStart;
-      let seg: { rowIdx: number; startDate: string; endDate: string } | null = null;
+      let seg: { rowIdx: number; startDate: string; endDate: string; doneLevel: number } | null = null;
       while (dateCmp(cur, segEnd) <= 0) {
         const idx = cellDates.indexOf(cur);
         if (idx < 0) break;
         const r = Math.floor(idx / 7);
-        if (seg && r === seg.rowIdx) seg.endDate = cur;
-        else { seg = { rowIdx: r, startDate: cur, endDate: cur }; segs.push(seg); }
+        const dLvl = getDone(p as ScheduleEntry, cur);
+        if (seg && r === seg.rowIdx && dLvl === seg.doneLevel) seg.endDate = cur;
+        else { seg = { rowIdx: r, startDate: cur, endDate: cur, doneLevel: dLvl }; segs.push(seg); }
         const { y, m, d } = parseDate(cur);
         const c = new Date(y, m, d); c.setDate(c.getDate() + 1);
         cur = dateKey(c.getFullYear(), c.getMonth(), c.getDate());
@@ -705,7 +718,7 @@ function baseColor(cat: string): string {
           if (other.start <= seg.startDate && seg.startDate <= other.end) localSlot++;
           if (localSlot >= 4) break;
         }
-        const topOffset = 36 + Math.min(localSlot, 3) * 22;
+        const topOffset = bandBaseOff + Math.min(localSlot, 3) * bandRowH;
         const top = startCell.top + topOffset;
         const segStartDate = seg.startDate;
 
@@ -719,9 +732,11 @@ function baseColor(cat: string): string {
           style);
         rowEl.textContent = p.title;
 
-        const doneLevel = getDone(p as ScheduleEntry, segStartDate);
-        if (doneLevel === 1) rowEl.classList.add("done-1");
-        if (doneLevel === 2) rowEl.classList.add("done-2");
+        // Use the precomputed per-segment done level (already reflects the
+        // done state of every day in this segment, since segments split on
+        // done-level changes above).
+        if (seg.doneLevel === 1) rowEl.classList.add("done-1");
+        if (seg.doneLevel === 2) rowEl.classList.add("done-2");
 
         layer!.appendChild(rowEl);
       }
@@ -782,7 +797,7 @@ function baseColor(cat: string): string {
 
       // Reserve slot spacers for visible period bands on this date so that
       // chips naturally sit below the bands. Each period band occupies one
-      // row (~22px). The number of bands covering this date = the slot count
+      // row (~1.3rem). The number of bands covering this date = the slot count
       // to reserve.
       const plist = periods();
       let bandSlotCount = 0;
@@ -793,7 +808,7 @@ function baseColor(cat: string): string {
         }
       }
       const spacersHtml = bandSlotCount > 0
-        ? `<span class="chip-spacer" style="height:${bandSlotCount * 22}px;flex:0 0 auto;"></span>`
+        ? `<span class="chip-spacer" style="height:${(bandSlotCount * 1.3).toFixed(1)}rem;flex:0 0 auto;"></span>`
         : "";
 
       // Max total chip elements per cell (including "+N").
@@ -816,7 +831,7 @@ function baseColor(cat: string): string {
       }
       const remaining = sorted.length - chipsHtml.length;
       const more = remaining > 0
-        ? `<span class="chip" style="${chipColors("other", 0)}">+${remaining}</span>`
+        ? `<span class="chip" style="${chipColors("other", 0)}">~${remaining}~</span>`
         : "";
 
       html += `<div class="${cellClass}" data-date="${cellDate}">
