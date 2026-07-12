@@ -205,10 +205,10 @@ function baseColor(cat: string): string {
   }
   .cal-body { display: grid; grid-template-columns: repeat(7, 1fr); }
   .cal-cell {
-    position: relative; height: 88px; padding: 0.4rem 0.35rem;
+    position: relative; height: 148px; padding: 0.4rem 0.35rem 0.3rem;
     border-right: 1px solid #f2f2f2; border-bottom: 1px solid #f2f2f2;
     background: var(--st-bg); cursor: pointer; transition: background 0.1s ease;
-    display: flex; flex-direction: column; gap: 0.15rem;
+    display: flex; flex-direction: column; gap: 0.18rem;
     overflow: hidden;
   }
   .cal-cell:nth-child(7n) { border-right: 0; }
@@ -244,6 +244,31 @@ function baseColor(cat: string): string {
   }
   .chip.done-1 { text-decoration: wavy line-through; text-decoration-color: var(--chip-c, currentColor); opacity: 0.55; }
   .chip.done-2 { opacity: 0.30; filter: grayscale(0.6); }
+
+  /* Period chips no longer appear in cells; period entries render as
+     cross-cell .period-band overlays (see below). */
+
+  /* Period bands — continuous across cells via CSS Grid overlay.
+     They are placed as siblings of .cal-cell in .cal-body's grid, using
+     grid-column/grid-row to span multiple cells. align-self:start + fixed
+     height + margin-top let multiple bands stack vertically within a row. */
+  .period-band {
+    z-index: 1; pointer-events: auto; cursor: pointer;
+    align-self: start;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-size: 0.71rem; line-height: 1.45; font-weight: 500;
+    border-radius: 3px;
+    border-left: 3px solid var(--chip-cb, var(--st-pop));
+    background: var(--chip-t, var(--st-tint));
+    color: var(--chip-c, var(--st-pop));
+    height: 1.25rem; min-width: 0;
+    box-sizing: border-box;
+    padding: 0.03rem 0.3rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .period-band.done-1 { text-decoration: wavy line-through; opacity: 0.55; }
+  .period-band.done-2 { opacity: 0.30; filter: grayscale(0.6); }
+  .period-band:hover { filter: brightness(0.96); }
 
   /* ===== Agenda ===== */
   .agenda-panel {
@@ -331,8 +356,7 @@ function baseColor(cat: string): string {
   @media (max-width: 760px) {
     .sched-grid { grid-template-columns: 1fr; }
     .agenda-panel { position: static; }
-    .cal-cell { height: 64px; padding: 0.25rem 0.25rem; }
-    .chip { display: none; }
+    .cal-cell { height: 116px; padding: 0.25rem 0.25rem 0.15rem; }
   }
 </style>
 
@@ -473,7 +497,93 @@ function baseColor(cat: string): string {
       .map((p: any) => ({ id: p.id, time: p.time || "全天", title: p.title, category: p.category, color: p.color, isPeriod: true, done: p.done }));
     return [...fromPeriods, ...direct];
   }
+  /** Non-period entries only (for calendar chip rendering). */
+  function nonPeriodEventsFor(d: string): ScheduleEntry[] {
+    return (schedule[d] || []).filter((e: ScheduleEntry) => {
+      const p = (schedule.__periods__ || []).find((x: any) => x.id === e.id);
+      return !p;
+    });
+  }
   function periods(): any[] { return schedule.__periods__ || []; }
+
+  // ---------------------------------------------------------------------------
+  // Period bands (cross-cell overlays)
+  // ---------------------------------------------------------------------------
+  /** Compare two "YYYY-MM-DD" strings lexicographically (works for ISO dates). */
+  function dateCmp(a: string, b: string): number { return a < b ? -1 : a > b ? 1 : 0; }
+
+  /** Render period bands as cross-cell grid overlays over the current calendar. */
+  function renderPeriodBands(cellDates: string[]) {
+    const existing = calBody.querySelectorAll<HTMLElement>(".period-band");
+    existing.forEach((e) => e.remove());
+
+    const plist = periods();
+    if (plist.length === 0 || cellDates.length === 0) return;
+
+    const viewStart = cellDates[0];
+    const viewEnd = cellDates[cellDates.length - 1];
+
+    for (let slotIdx = 0; slotIdx < plist.length; slotIdx++) {
+      const p = plist[slotIdx];
+      const segStart = dateCmp(p.start, viewStart) < 0 ? viewStart : p.start;
+      const segEnd = dateCmp(p.end, viewEnd) > 0 ? viewEnd : p.end;
+      if (dateCmp(segStart, segEnd) > 0) continue;
+
+      // Walk day-by-day; split on row break (idx crossing to next row).
+      const segs: { row: number; colStart: number; colEnd: number }[] = [];
+      let cur = segStart;
+      let seg = null as null | { row: number; colStart: number; colEnd: number };
+      while (dateCmp(cur, segEnd) <= 0) {
+        const idx = cellDates.indexOf(cur);
+        if (idx < 0) break;
+        const row = Math.floor(idx / 7);
+        const col = idx % 7;
+        if (seg && row === seg.row && col === seg.colEnd + 1) {
+          seg.colEnd = col;
+        } else {
+          seg = { row, colStart: col, colEnd: col };
+          segs.push(seg);
+        }
+        const { y, m, d } = parseDate(cur);
+        const c = new Date(y, m, d);
+        c.setDate(c.getDate() + 1);
+        cur = dateKey(c.getFullYear(), c.getMonth(), c.getDate());
+      }
+
+      const customColor = p.color && /^#[0-9a-f]{6}$/.test(p.color);
+      const style = customColor
+        ? `--chip-c:${p.color};--chip-t:${p.color}22;--chip-cb:${p.color};`
+        : chipColors(p.category || "other", 0);
+
+      const baseSlot = Math.min(slotIdx, 3);
+      // Align with chip rows: day-num (~26px) + N * row (22px to match spacer).
+      const topCalc = `26px + ${baseSlot} * 22px`;
+
+      for (const seg of segs) {
+        const startColGrid = seg.colStart + 1;
+        const endColGrid = seg.colEnd + 2;
+        const segStartDate = cellDates[seg.row * 7 + seg.colStart];
+
+        const rowEl = document.createElement("div");
+        rowEl.className = "period-band";
+        rowEl.dataset.id = p.id || "";
+        rowEl.dataset.date = segStartDate;
+        rowEl.title = `${p.title} (${p.start} → ${p.end})`;
+        rowEl.setAttribute("style",
+          `grid-column:${startColGrid} / ${endColGrid};grid-row:${seg.row + 1};` +
+          `margin-top:calc(${topCalc});margin-left:0.35rem;margin-right:0.35rem;` +
+          style);
+        rowEl.textContent = p.title;
+
+        const doneLevel = getDone(p as ScheduleEntry, segStartDate);
+        if (doneLevel === 1) rowEl.classList.add("done-1");
+        if (doneLevel === 2) rowEl.classList.add("done-2");
+
+        calBody.appendChild(rowEl);
+      }
+    }
+  }
+
 
   // ---------------------------------------------------------------------------
   // Calendar rendering
@@ -491,6 +601,7 @@ function baseColor(cat: string): string {
     const totalCells = Math.ceil((totalLeading + daysInMonth) / 7) * 7;
 
     let html = "";
+    const cellDates: string[] = new Array(totalCells);
     for (let i = 0; i < totalCells; i++) {
       const dayNum = i - totalLeading + 1;
       let cellClass = "cal-cell";
@@ -518,16 +629,33 @@ function baseColor(cat: string): string {
         cellDate = dateKey(y, m, d);
         cellClass += " outside"; dayLabel = String(d);
       }
+      cellDates[i] = cellDate;
 
-      const evts = eventsFor(cellDate);
-      // Sort by global rank for consistent Y position
+      // Chips: skip period entries — they render as cross-cell .period-band overlays.
+      const evts = nonPeriodEventsFor(cellDate);
       const sorted = [...evts].sort((a, b) => entryRank(a) - entryRank(b));
 
-      // Build chips (up to 3, periods always included)
+      // Reserve slot spacers for visible period bands on this date so that
+      // chips naturally sit below the bands. Each period band occupies one
+      // row (~22px). The number of bands covering this date = the slot count
+      // to reserve.
+      const plist = periods();
+      let bandSlotCount = 0;
+      for (const p of plist) {
+        if (p.start <= cellDate && cellDate <= p.end) {
+          bandSlotCount++;
+          if (bandSlotCount >= 4) break;
+        }
+      }
+      const spacersHtml = bandSlotCount > 0
+        ? `<span class="chip-spacer" style="height:${bandSlotCount * 22}px;flex:0 0 auto;"></span>`
+        : "";
+
+      // Max 4 chips, then ellipsis
+      const MAX_CHIPS = 4;
       const chipsHtml: string[] = [];
-      let maxChips = sorted.some(e => e.isPeriod) ? Math.max(3, sorted.length) : 2;
       sorted.forEach((e, idx) => {
-        if (chipsHtml.length >= maxChips) return;
+        if (chipsHtml.length >= MAX_CHIPS) return;
         const customColor = e.color && /^#[0-9a-f]{6}$/.test(e.color);
         const shade = customColor ? 0 : idx;
         const allDay = e.time === "全天" || /^\s*全天/.test(e.time);
@@ -546,11 +674,15 @@ function baseColor(cat: string): string {
 
       html += `<div class="${cellClass}" data-date="${cellDate}">
         <span class="day-num">${dayLabel}</span>
-        ${chipsHtml.join("")}${more}
+        ${spacersHtml}${chipsHtml.join("")}${more}
       </div>`;
     }
 
     calBody.innerHTML = html;
+
+    // --- Render period bands as cross-cell overlays ---
+    renderPeriodBands(cellDates);
+
     calBody.querySelectorAll<HTMLElement>(".cal-cell").forEach((cell) => {
       cell.addEventListener("click", () => {
         selectedDate = cell.dataset.date || selectedDate;
@@ -560,6 +692,27 @@ function baseColor(cat: string): string {
         }
         renderCalendar();
         renderAgenda();
+      });
+    });
+
+    // Period band click: select its start date and open editor if authed
+    calBody.querySelectorAll<HTMLElement>(".period-band").forEach((band) => {
+      band.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const id = band.dataset.id;
+        const date = band.dataset.date;
+        if (!id) return;
+        const p = (schedule.__periods__ || []).find((x: any) => x.id === id);
+        if (!p) return;
+        // Jump to the period's start if it's outside current month view
+        const cellDateInCurView = cellDates.indexOf(date || "") >= 0;
+        if (cellDateInCurView) selectedDate = date!;
+        else selectedDate = p.start;
+        const { y, m } = parseDate(selectedDate);
+        if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
+        renderCalendar();
+        renderAgenda();
+        if (isAuthed) openEditDialog(selectedDate, id);
       });
     });
   }
