@@ -203,7 +203,12 @@ function baseColor(cat: string): string {
     text-align: center; font-size: 0.78rem; font-weight: 500; color: var(--st-muted);
     padding: 0.6rem 0; letter-spacing: 0.04em;
   }
-  .cal-body { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-body { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-bands-layer {
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 2;
+  }
+  .cal-bands-layer .period-band { pointer-events: auto; }
   .cal-cell {
     position: relative; height: 148px; padding: 0.4rem 0.35rem 0.3rem;
     border-right: 1px solid #f2f2f2; border-bottom: 1px solid #f2f2f2;
@@ -248,20 +253,17 @@ function baseColor(cat: string): string {
   /* Period chips no longer appear in cells; period entries render as
      cross-cell .period-band overlays (see below). */
 
-  /* Period bands — continuous across cells via CSS Grid overlay.
-     They are placed as siblings of .cal-cell in .cal-body's grid, using
-     grid-column/grid-row to span multiple cells. align-self:start + fixed
-     height + margin-top let multiple bands stack vertically within a row. */
+  /* Period bands — absolute overlay inside .cal-bands-layer, positioned
+     via JS using cell bounding rects. Does NOT participate in grid layout. */
   .period-band {
-    z-index: 1; pointer-events: auto; cursor: pointer;
-    align-self: start;
+    position: absolute; cursor: pointer;
     overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
     font-size: 0.71rem; line-height: 1.45; font-weight: 500;
     border-radius: 3px;
     border-left: 3px solid var(--chip-cb, var(--st-pop));
     background: var(--chip-t, var(--st-tint));
     color: var(--chip-c, var(--st-pop));
-    height: 1.25rem; min-width: 0;
+    height: 1.35rem; min-width: 0;
     box-sizing: border-box;
     padding: 0.03rem 0.3rem;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
@@ -512,16 +514,33 @@ function baseColor(cat: string): string {
   /** Compare two "YYYY-MM-DD" strings lexicographically (works for ISO dates). */
   function dateCmp(a: string, b: string): number { return a < b ? -1 : a > b ? 1 : 0; }
 
-  /** Render period bands as cross-cell grid overlays over the current calendar. */
+  /** Render period bands as absolute overlays over the calendar grid.
+      Bands do NOT participate in grid layout — they're positioned in a
+      separate absolute layer using measured cell rects. */
   function renderPeriodBands(cellDates: string[]) {
-    const existing = calBody.querySelectorAll<HTMLElement>(".period-band");
-    existing.forEach((e) => e.remove());
+    let layer = calBody.querySelector<HTMLElement>(".cal-bands-layer");
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.className = "cal-bands-layer";
+      calBody.appendChild(layer);
+    } else {
+      layer.innerHTML = "";
+    }
 
     const plist = periods();
     if (plist.length === 0 || cellDates.length === 0) return;
 
+    const cells = Array.from(calBody.querySelectorAll<HTMLElement>(".cal-cell"));
+    if (cells.length !== cellDates.length) return;
+    const cellRects = cells.map((c) => c.getBoundingClientRect());
+    const bodyRect = calBody.getBoundingClientRect();
+
     const viewStart = cellDates[0];
     const viewEnd = cellDates[cellDates.length - 1];
+
+    // Measure real cell positions (absolute coords relative to calBody).
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const cellHPad = 0.35 * rem;
 
     for (let slotIdx = 0; slotIdx < plist.length; slotIdx++) {
       const p = plist[slotIdx];
@@ -529,24 +548,18 @@ function baseColor(cat: string): string {
       const segEnd = dateCmp(p.end, viewEnd) > 0 ? viewEnd : p.end;
       if (dateCmp(segStart, segEnd) > 0) continue;
 
-      // Walk day-by-day; split on row break (idx crossing to next row).
-      const segs: { row: number; colStart: number; colEnd: number }[] = [];
+      // Build segments by walking days and splitting on row change.
+      const segs: { rowIdx: number; startDate: string; endDate: string }[] = [];
       let cur = segStart;
-      let seg = null as null | { row: number; colStart: number; colEnd: number };
+      let seg: { rowIdx: number; startDate: string; endDate: string } | null = null;
       while (dateCmp(cur, segEnd) <= 0) {
         const idx = cellDates.indexOf(cur);
         if (idx < 0) break;
-        const row = Math.floor(idx / 7);
-        const col = idx % 7;
-        if (seg && row === seg.row && col === seg.colEnd + 1) {
-          seg.colEnd = col;
-        } else {
-          seg = { row, colStart: col, colEnd: col };
-          segs.push(seg);
-        }
+        const r = Math.floor(idx / 7);
+        if (seg && r === seg.rowIdx) seg.endDate = cur;
+        else { seg = { rowIdx: r, startDate: cur, endDate: cur }; segs.push(seg); }
         const { y, m, d } = parseDate(cur);
-        const c = new Date(y, m, d);
-        c.setDate(c.getDate() + 1);
+        const c = new Date(y, m, d); c.setDate(c.getDate() + 1);
         cur = dateKey(c.getFullYear(), c.getMonth(), c.getDate());
       }
 
@@ -555,14 +568,18 @@ function baseColor(cat: string): string {
         ? `--chip-c:${p.color};--chip-t:${p.color}22;--chip-cb:${p.color};`
         : chipColors(p.category || "other", 0);
 
-      const baseSlot = Math.min(slotIdx, 3);
-      // Align with chip rows: day-num (~26px) + N * row (22px to match spacer).
-      const topCalc = `26px + ${baseSlot} * 22px`;
-
       for (const seg of segs) {
-        const startColGrid = seg.colStart + 1;
-        const endColGrid = seg.colEnd + 2;
-        const segStartDate = cellDates[seg.row * 7 + seg.colStart];
+        const startIdx = cellDates.indexOf(seg.startDate);
+        const endIdx = cellDates.indexOf(seg.endDate);
+        if (startIdx < 0 || endIdx < 0) continue;
+        const startCell = cellRects[startIdx];
+        const endCell = cellRects[endIdx];
+        const left = startCell.left + cellHPad;
+        const right = endCell.right - cellHPad;
+        const width = Math.max(right - left, 16);
+        const topOffset = 26 + Math.min(slotIdx, 3) * 22; // align with chip row
+        const top = startCell.top + topOffset;
+        const segStartDate = seg.startDate;
 
         const rowEl = document.createElement("div");
         rowEl.className = "period-band";
@@ -570,8 +587,7 @@ function baseColor(cat: string): string {
         rowEl.dataset.date = segStartDate;
         rowEl.title = `${p.title} (${p.start} → ${p.end})`;
         rowEl.setAttribute("style",
-          `grid-column:${startColGrid} / ${endColGrid};grid-row:${seg.row + 1};` +
-          `margin-top:calc(${topCalc});margin-left:0.35rem;margin-right:0.35rem;` +
+          `left:${left - bodyRect.left}px;top:${top - bodyRect.top}px;width:${width}px;` +
           style);
         rowEl.textContent = p.title;
 
@@ -579,10 +595,11 @@ function baseColor(cat: string): string {
         if (doneLevel === 1) rowEl.classList.add("done-1");
         if (doneLevel === 2) rowEl.classList.add("done-2");
 
-        calBody.appendChild(rowEl);
+        layer!.appendChild(rowEl);
       }
     }
   }
+
 
 
   // ---------------------------------------------------------------------------
@@ -1076,6 +1093,19 @@ function baseColor(cat: string): string {
 
   refreshFromServer();
   setInterval(refreshFromServer, 5 * 60000);
+
+  // Re-position period bands on resize — they use absolute pixel coords.
+  let _resizeRaf: number | null = null;
+  function scheduleBandLayout() {
+    if (_resizeRaf !== null) return;
+    _resizeRaf = requestAnimationFrame(() => {
+      _resizeRaf = null;
+      const cells = Array.from(calBody.querySelectorAll<HTMLElement>(".cal-cell"));
+      const cellDates = cells.map((c) => c.dataset.date || "");
+      if (cellDates.length) renderPeriodBands(cellDates);
+    });
+  }
+  window.addEventListener("resize", scheduleBandLayout);
 
   fetch(`${apiBase}/auth/check`, { credentials: "same-origin" }).then(r => r.ok ? r.json() : Promise.reject()).then(() => setAuthed(true)).catch(() => setAuthed(false));
 
