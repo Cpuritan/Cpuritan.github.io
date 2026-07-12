@@ -577,7 +577,17 @@ function baseColor(cat: string): string {
         const left = startCell.left + cellHPad;
         const right = endCell.right - cellHPad;
         const width = Math.max(right - left, 16);
-        const topOffset = 36 + Math.min(slotIdx, 3) * 22; // day-num bottom + gap, align with chip row
+        // Count only the bands that actually cover this segment's start date and
+        // come before this period in plist — that gives the local slot this band
+        // occupies in this row, matching the chip-spacer reservation in
+        // renderCalendar (see bandSlotCount).
+        let localSlot = 0;
+        for (const other of plist) {
+          if (other === p) break;
+          if (other.start <= seg.startDate && seg.startDate <= other.end) localSlot++;
+          if (localSlot >= 4) break;
+        }
+        const topOffset = 36 + Math.min(localSlot, 3) * 22;
         const top = startCell.top + topOffset;
         const segStartDate = seg.startDate;
 
@@ -892,7 +902,14 @@ function baseColor(cat: string): string {
     loginError.hidden = true;
     try {
       const res = await fetch(`${apiBase}/login`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body: JSON.stringify({password}) });
-      if (!res.ok) { const data = await res.json().catch(()=>({})); loginError.textContent = data.error || "登录失败"; loginError.hidden = false; return; }
+      if (!res.ok) {
+        let msg = "登录失败";
+        try { const data = await res.json(); if (data?.error) msg = data.error; }
+        catch { msg = `服务器错误 (HTTP ${res.status})`; }
+        loginError.textContent = msg;
+        loginError.hidden = false;
+        return;
+      }
       loginDlg.close(); loginForm.reset(); setAuthed(true);
     } catch (err: any) { loginError.textContent = err?.message || "网络错误"; loginError.hidden = false; }
   });
