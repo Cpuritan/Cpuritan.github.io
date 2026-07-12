@@ -56,43 +56,44 @@ function baseColor(cat: string): string {
         <div class="cal-body" id="cal-body"></div>
       </section>
 
-      <section class="agenda-panel" aria-label="日程列表">
-        <div class="agenda-head">
-          <button type="button" class="day-btn" id="prev-day" aria-label="前一天">‹</button>
-          <h2 id="agenda-title">今日日程</h2>
-          <button type="button" class="day-btn" id="next-day" aria-label="后一天">›</button>
-          <span class="agenda-count" id="agenda-count"></span>
-          <span id="save-indicator" hidden style="margin-left:auto;font-size:.7rem;color:var(--st-muted);font-weight:400;">保存中…</span>
-        </div>
-        <ul class="agenda-list" id="agenda-list"></ul>
-        <div class="agenda-edit-actions" id="agenda-edit-actions" hidden>
-          <button type="button" class="ed-btn ed-add" id="add-btn">+ 新增日程</button>
-        </div>
-      </section>
-    </div>
+      <div class="right-panel">
+        <section class="agenda-panel" aria-label="日程列表">
+          <div class="agenda-head">
+            <button type="button" class="day-btn" id="prev-day" aria-label="前一天">‹</button>
+            <h2 id="agenda-title">今日日程</h2>
+            <button type="button" class="day-btn" id="next-day" aria-label="后一天">›</button>
+            <span class="agenda-count" id="agenda-count"></span>
+            <span id="save-indicator" hidden style="margin-left:auto;font-size:.7rem;color:var(--st-muted);font-weight:400;">保存中…</span>
+          </div>
+          <ul class="agenda-list" id="agenda-list"></ul>
+          <div class="agenda-edit-actions" id="agenda-edit-actions" hidden>
+            <button type="button" class="ed-btn ed-add" id="add-btn">+ 新增日程</button>
+          </div>
+        </section>
 
-    <!-- ===== 随想 ===== -->
-    <section class="musings-panel" aria-label="随想">
-      <div class="musings-head">
-        <h2>随想</h2>
-        <button type="button" class="tb-btn" id="muse-add-btn" title="新增">+</button>
+        <!-- ===== 随想 ===== -->
+        <section class="musings-panel" aria-label="随想">
+          <div class="musings-head">
+            <h2>随想&灵感</h2>
+            <button type="button" class="tb-btn" id="muse-add-btn" title="新增">+</button>
+          </div>
+          <div class="muse-form" id="muse-form" hidden>
+            <div class="muse-type-picker" id="muse-type-picker">
+              <button type="button" class="muse-type-btn is-musing is-active" data-type="musing">随想</button>
+              <button type="button" class="muse-type-btn is-inspiration" data-type="inspiration">灵感</button>
+            </div>
+            <div class="muse-input-row">
+              <input type="text" id="muse-input" placeholder="写点什么…" maxlength="500" />
+              <span class="muse-actions">
+                <button type="button" class="ed-btn primary" id="muse-save">保存</button>
+                <button type="button" class="ed-btn ghost" id="muse-cancel">取消</button>
+              </span>
+            </div>
+          </div>
+          <ul class="musings-list" id="musings-list"></ul>
+        </section>
       </div>
-      <div class="muse-form" id="muse-form" hidden>
-        <div class="muse-type-picker" id="muse-type-picker">
-          <button type="button" class="muse-type-btn is-musing is-active" data-type="musing">随想</button>
-          <button type="button" class="muse-type-btn is-inspiration" data-type="inspiration">灵感</button>
-        </div>
-        <div class="muse-input-row">
-          <input type="text" id="muse-input" placeholder="写点什么…" maxlength="500" />
-          <span class="muse-actions">
-            <button type="button" class="ed-btn primary" id="muse-save">保存</button>
-            <button type="button" class="ed-btn ghost" id="muse-cancel">取消</button>
-          </span>
-        </div>
-      </div>
-      <ul class="musings-list" id="musings-list"></ul>
-    </section>
-  </div>
+    </div>
 
   <!-- ===== Login dialog ===== -->
   <dialog class="dlg" id="login-dlg" aria-label="回答问题">
@@ -193,7 +194,13 @@ function baseColor(cat: string): string {
     --st-shadow: 0 2px 10px rgba(0,0,0,0.06);
   }
 
-  .sched-page { max-width: 920px; margin: 0 auto; }
+  /* Override base .page-shell 920px cap so the schedule page can use the full viewport width */
+  .page-shell:has(.sched-page) {
+    max-width: 1280px;
+    padding: 1.4rem 1.2rem 3rem;
+  }
+
+  .sched-page { width: 100%; max-width: 100%; margin: 0; }
 
   .sched-toolbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -213,7 +220,13 @@ function baseColor(cat: string): string {
   .tb-login.is-authed { color: var(--st-pop); border-color: var(--st-pop); background: var(--st-tint); }
 
   .sched-grid {
-    display: grid; grid-template-columns: 1fr 300px; gap: 1.2rem; align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+    gap: 1.2rem; align-items: flex-start;
+  }
+  .right-panel {
+    display: flex; flex-direction: column; gap: 1.2rem;
+    position: sticky; top: 80px;
   }
 
   /* ===== Calendar ===== */
@@ -297,7 +310,7 @@ function baseColor(cat: string): string {
   /* ===== Agenda ===== */
   .agenda-panel {
     border: 1px solid var(--st-line); border-radius: 12px; background: var(--st-bg);
-    padding: 0 0 0.6rem; position: sticky; top: 80px;
+    padding: 0 0 0.6rem;
     max-width: 100%; box-shadow: var(--st-shadow);
   }
   .agenda-head {
@@ -380,7 +393,7 @@ function baseColor(cat: string): string {
   /* ===== Musings & Inspiration ===== */
   .musings-panel {
     border: 1px solid var(--st-line); border-radius: 12px; background: var(--st-bg);
-    padding: 0 0 0.6rem; margin-top: 1.2rem;
+    padding: 0 0 0.6rem;
     max-width: 100%; box-shadow: var(--st-shadow);
   }
   .musings-head {
@@ -449,10 +462,15 @@ function baseColor(cat: string): string {
   body.is-admin .muse-item .muse-edits { display: flex; }
   .muse-empty { padding: 1rem 0.7rem; text-align: center; color: var(--st-muted); font-size: 0.82rem; }
 
-  @media (max-width: 760px) {
+  /* Only collapse to a single column on very narrow screens (phones).
+     The two-column layout is preserved through shrink-down to ~360px so
+     that resizing a desktop window does NOT prematurely stack the panels. */
+  @media (max-width: 560px) {
+    .page-shell:has(.sched-page) { padding: 1rem 0.6rem 2.4rem; }
     .sched-grid { grid-template-columns: 1fr; }
-    .agenda-panel { position: static; }
-    .cal-cell { height: 110px; padding: 0.25rem 0.25rem 0.15rem; }
+    .right-panel { position: static; }
+    .cal-cell { height: 96px; padding: 0.25rem 0.25rem 0.15rem; }
+    .tb-label { min-width: 5rem; font-size: 0.82rem; }
   }
 </style>
 
