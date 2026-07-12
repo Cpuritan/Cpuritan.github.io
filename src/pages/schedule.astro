@@ -240,10 +240,17 @@ function baseColor(cat: string): string {
   .cal-head {
     display: grid; grid-template-columns: repeat(7, 1fr);
     background: var(--st-card); border-bottom: 1px solid var(--st-line);
-    text-align: center; font-size: 0.78rem; font-weight: 500; color: var(--st-muted);
+    text-align: center; font-size: clamp(0.6rem, 1.45cqw, 0.78rem); font-weight: 500; color: var(--st-muted);
     padding: 0.6rem 0; letter-spacing: 0.04em;
   }
-  .cal-body { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); }
+  /* Make the calendar grid a query container so descendants can scale
+     text/padding by the actual rendered cell width, instead of fixed rem
+     that doesn't shrink with the cells. 1cqw = 1% of the calendar body width. */
+  .cal-body {
+    position: relative; display: grid; grid-template-columns: repeat(7, 1fr);
+    container-type: inline-size;
+    container-name: cal;
+  }
   .cal-bands-layer {
     position: absolute; inset: 0;
     pointer-events: none; z-index: 2;
@@ -263,7 +270,9 @@ function baseColor(cat: string): string {
   .cal-cell.weekend .day-num { color: var(--st-muted); }
   .cal-cell.today { background: #f8faff; }
   .cal-cell.today .day-num {
-    background: var(--st-today-bd); color: #fff; width: 1.6rem; height: 1.6rem;
+    background: var(--st-today-bd); color: #fff;
+    width: clamp(1.2rem, 2.55cqw, 1.6rem);
+    height: clamp(1.2rem, 2.55cqw, 1.6rem);
     box-shadow: 0 1px 4px rgba(43,110,211,0.25);
   }
   .cal-cell.selected { background: #f4f7fd; }
@@ -272,16 +281,20 @@ function baseColor(cat: string): string {
 
   .day-num {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 1.55rem; height: 1.55rem; border-radius: 8px;
-    font-size: 0.82rem; font-weight: 500; color: var(--st-text);
+    width: clamp(1.2rem, 2.45cqw, 1.55rem);
+    height: clamp(1.2rem, 2.45cqw, 1.55rem);
+    border-radius: 8px;
+    font-size: clamp(0.6rem, 1.52cqw, 0.82rem); font-weight: 500; color: var(--st-text);
     transition: all 0.12s ease; margin-bottom: 0.1rem;
   }
 
   .chip {
-    font-size: 0.71rem;
+    font-size: clamp(0.5rem, 1.32cqw, 0.71rem);
     color: var(--chip-c, var(--st-pop));
     background: var(--chip-t, var(--st-tint));
-    border-left: 3px solid var(--chip-cb, var(--st-pop));
+    border-left-width: clamp(2px, 0.4cqw, 3px);
+    border-left-style: solid;
+    border-left-color: var(--chip-cb, var(--st-pop));
     border-radius: 3px;
     padding: 0.03rem 0.3rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -298,9 +311,11 @@ function baseColor(cat: string): string {
   .period-band {
     position: absolute; cursor: pointer;
     overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-    font-size: 0.71rem; line-height: 1.45; font-weight: 500;
+    font-size: clamp(0.5rem, 1.32cqw, 0.71rem); line-height: 1.45; font-weight: 500;
     border-radius: 3px;
-    border-left: 3px solid var(--chip-cb, var(--st-pop));
+    border-left-width: clamp(2px, 0.4cqw, 3px);
+    border-left-style: solid;
+    border-left-color: var(--chip-cb, var(--st-pop));
     background: var(--chip-t, var(--st-tint));
     color: var(--chip-c, var(--st-pop));
     min-width: 0;
