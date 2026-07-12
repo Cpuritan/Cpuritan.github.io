@@ -577,7 +577,7 @@ function baseColor(cat: string): string {
         const left = startCell.left + cellHPad;
         const right = endCell.right - cellHPad;
         const width = Math.max(right - left, 16);
-        const topOffset = 26 + Math.min(slotIdx, 3) * 22; // align with chip row
+        const topOffset = 36 + Math.min(slotIdx, 3) * 22; // day-num bottom + gap, align with chip row
         const top = startCell.top + topOffset;
         const segStartDate = seg.startDate;
 
