@@ -96,7 +96,7 @@ export default {
         if (typeof schedule !== "object" || !schedule) return jsonResponse({ error: "Invalid schedule object" }, 400);
         const { sha, content } = await ghGet(env.GH_TOKEN, env);
         for (const [k, v] of Object.entries(schedule)) {
-          if (k === "__periods__" || /^\d{4}-\d{2}-\d{2}$/.test(k)) content[k] = v;
+          if (k === "__periods__" || k === "__musings__" || /^\d{4}-\d{2}-\d{2}$/.test(k)) content[k] = v;
         }
         await ghPut(env.GH_TOKEN, env, content, sha, "schedule: bulk update");
         return jsonResponse({ success: true });

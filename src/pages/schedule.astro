@@ -70,6 +70,28 @@ function baseColor(cat: string): string {
         </div>
       </section>
     </div>
+
+    <!-- ===== 随想 ===== -->
+    <section class="musings-panel" aria-label="随想">
+      <div class="musings-head">
+        <h2>随想</h2>
+        <button type="button" class="tb-btn" id="muse-add-btn" title="新增">+</button>
+      </div>
+      <div class="muse-form" id="muse-form" hidden>
+        <div class="muse-type-picker" id="muse-type-picker">
+          <button type="button" class="muse-type-btn is-musing is-active" data-type="musing">随想</button>
+          <button type="button" class="muse-type-btn is-inspiration" data-type="inspiration">灵感</button>
+        </div>
+        <div class="muse-input-row">
+          <input type="text" id="muse-input" placeholder="写点什么…" maxlength="500" />
+          <span class="muse-actions">
+            <button type="button" class="ed-btn primary" id="muse-save">保存</button>
+            <button type="button" class="ed-btn ghost" id="muse-cancel">取消</button>
+          </span>
+        </div>
+      </div>
+      <ul class="musings-list" id="musings-list"></ul>
+    </section>
   </div>
 
   <!-- ===== Login dialog ===== -->
@@ -354,6 +376,78 @@ function baseColor(cat: string): string {
   .cat-swatch { border: 1px solid var(--st-line); background: var(--st-bg); border-radius: 999px; padding: 0.18rem 0.5rem; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; color: var(--st-text); transition: all 0.1s ease; }
   .cat-swatch .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--c, #ccc); display: inline-block; flex-shrink: 0; }
   .cat-swatch.is-active { border-color: var(--c); background: var(--t, var(--st-card)); font-weight: 500; }
+
+  /* ===== Musings & Inspiration ===== */
+  .musings-panel {
+    border: 1px solid var(--st-line); border-radius: 12px; background: var(--st-bg);
+    padding: 0 0 0.6rem; margin-top: 1.2rem;
+    max-width: 100%; box-shadow: var(--st-shadow);
+  }
+  .musings-head {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.65rem 0.7rem 0.55rem; border-bottom: 1px solid var(--st-line);
+  }
+  .musings-head h2 { margin: 0; font-size: 0.95rem; flex: 1; text-align: center; }
+  .musings-head .tb-btn { font-size: 1.1rem; font-weight: 600; line-height: 1; min-width: auto; width: 1.8rem; height: 1.8rem; border-radius: 8px; }
+  body:not(.is-admin) .musings-head .tb-btn { display: none; }
+
+  .muse-form {
+    padding: 0.5rem 0.7rem; border-bottom: 1px solid #f2f2f2;
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .muse-form[hidden] { display: none; }
+  .muse-type-picker { display: flex; gap: 0.35rem; }
+  .muse-type-btn {
+    border: 1px solid var(--st-line); border-radius: 999px;
+    padding: 0.15rem 0.55rem; font-family: inherit; font-size: 0.78rem;
+    cursor: pointer; transition: all 0.1s ease;
+    background: var(--st-bg); color: var(--st-muted);
+  }
+  .muse-type-btn:hover { background: var(--st-card); }
+  .muse-type-btn.is-active { font-weight: 500; }
+  .muse-type-btn.is-musing.is-active { border-color: #d97706; background: #fef3c7; color: #92400e; }
+  .muse-type-btn.is-inspiration.is-active { border-color: #7c3aed; background: #ede9fe; color: #5b21b6; }
+
+  .muse-input-row {
+    display: flex; gap: 0.4rem; align-items: center;
+  }
+  .muse-input-row input[type="text"] {
+    flex: 1; border: 1px solid var(--st-line); border-radius: 8px;
+    padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.88rem; color: var(--st-text);
+  }
+  .muse-input-row input:focus { outline: 2px solid var(--st-pop); outline-offset: -1px; border-color: var(--st-pop); }
+  .muse-input-row .muse-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+  .muse-input-row .muse-actions .ed-btn { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
+
+  .musings-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+  .muse-item {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 0.4rem; padding: 0.45rem 0.7rem;
+    border-bottom: 1px solid #f2f2f2; align-items: start;
+    font-size: 0.85rem; line-height: 1.45;
+  }
+  .muse-item:last-child { border-bottom: 0; }
+  .muse-item .muse-dot {
+    width: 0.55rem; height: 0.55rem; border-radius: 50%;
+    flex-shrink: 0; margin-top: 0.35rem; display: inline-block;
+  }
+  .muse-item .muse-body { display: flex; gap: 0.35rem; align-items: flex-start; min-width: 0; }
+  .muse-item .muse-text { overflow-wrap: anywhere; color: var(--st-text); }
+  .muse-item .muse-ts { font-size: 0.68rem; color: var(--st-muted); white-space: nowrap; margin-top: 0.1rem; }
+  .muse-item.musing { border-left: 3px solid #d97706; }
+  .muse-item.inspiration { border-left: 3px solid #7c3aed; }
+  .muse-item.musing .muse-dot { background: #d97706; }
+  .muse-item.inspiration .muse-dot { background: #7c3aed; }
+  .muse-item .muse-edits {
+    display: none; gap: 0.15rem; flex-shrink: 0;
+  }
+  .muse-item .muse-edits button {
+    border: none; background: transparent; color: #bbb; cursor: pointer;
+    font-size: 0.78rem; padding: 0.15rem; border-radius: 4px; line-height: 1;
+  }
+  .muse-item .muse-edits button:hover { color: var(--st-text); background: var(--st-card); }
+  body.is-admin .muse-item .muse-edits { display: flex; }
+  .muse-empty { padding: 1rem 0.7rem; text-align: center; color: var(--st-muted); font-size: 0.82rem; }
 
   @media (max-width: 760px) {
     .sched-grid { grid-template-columns: 1fr; }
@@ -876,12 +970,12 @@ function baseColor(cat: string): string {
   // Always send the entire (already-mutated) schedule object. saveAll only
   // overwrites known keys (__periods__ + yyyy-mm-dd), preserving the rest.
   function commitAndPersist(prevSnapshot: Schedule, errMsg = "保存失败，已回滚"): void {
-    renderCalendar(); renderAgenda();
+    renderCalendar(); renderAgenda(); renderMusings();
     // Fire-and-forget; rollback on rejection.
     persistSave(structuredClone(schedule)).catch((err) => {
       console.error("Save failed, rolling back", err);
       schedule = prevSnapshot;
-      renderCalendar(); renderAgenda();
+      renderCalendar(); renderAgenda(); renderMusings();
       alert(err?.message || errMsg);
     });
   }
@@ -920,6 +1014,137 @@ function baseColor(cat: string): string {
     schedule[date] = (schedule[date] || []).filter((e) => e.id !== id);
     if (schedule[date].length === 0) delete schedule[date];
     commitAndPersist(prev);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Musings & Inspiration (随想&灵感) — global list, persisted via saveAll
+  // under the __musings__ key (worker whitelist was extended to accept it).
+  // Each item: { id, type: 'musing'|'inspiration', text, date, ts }.
+  // ---------------------------------------------------------------------------
+  type MusingType = "musing" | "inspiration";
+  type MusingItem = { id: string; type: MusingType; text: string; date: string; ts: number };
+
+  function musings(): MusingItem[] {
+    const arr = schedule.__musings__;
+    if (!Array.isArray(arr)) return [];
+    return arr as MusingItem[];
+  }
+  function setMusings(list: MusingItem[]) {
+    if (list.length === 0) delete schedule.__musings__;
+    else schedule.__musings__ = list;
+  }
+  function newId(): string {
+    return "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  const museListEl = document.getElementById("musings-list")!;
+  const museFormEl = document.getElementById("muse-form") as HTMLFormElement;
+  const museInputEl = document.getElementById("muse-input") as HTMLInputElement;
+  const museTypePicker = document.getElementById("muse-type-picker")!;
+  const museAddBtn = document.getElementById("muse-add-btn") as HTMLButtonElement;
+  const museSaveBtn = document.getElementById("muse-save") as HTMLButtonElement;
+  const museCancelBtn = document.getElementById("muse-cancel") as HTMLButtonElement;
+
+  // Currently selected type while the form is open.
+  let museDraftType: MusingType = "musing";
+  // When editing an existing item, hold its id; null = creating new.
+  let museEditingId: string | null = null;
+
+  function syncMuseTypeButtons() {
+    museTypePicker.querySelectorAll<HTMLButtonElement>(".muse-type-btn").forEach((b) => {
+      b.classList.toggle("is-active", b.dataset.type === museDraftType);
+    });
+    museInputEl.placeholder = museDraftType === "musing" ? "记一笔随想…" : "记一笔灵感…";
+  }
+
+  function openMuseForm(editing: MusingItem | null) {
+    museEditingId = editing ? editing.id : null;
+    museDraftType = editing ? editing.type : "musing";
+    museInputEl.value = editing ? editing.text : "";
+    syncMuseTypeButtons();
+    museFormEl.hidden = false;
+    museInputEl.focus();
+  }
+  function closeMuseForm() {
+    museFormEl.hidden = true;
+    museInputEl.value = "";
+    museEditingId = null;
+  }
+
+  museTypePicker.addEventListener("click", (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>(".muse-type-btn");
+    if (!btn) return;
+    museDraftType = btn.dataset.type as MusingType;
+    syncMuseTypeButtons();
+  });
+  museAddBtn.addEventListener("click", () => openMuseForm(null));
+  museCancelBtn.addEventListener("click", closeMuseForm);
+  museSaveBtn.addEventListener("click", () => {
+    const text = museInputEl.value.trim();
+    if (!text) { museInputEl.focus(); return; }
+    const prev = snapshot();
+    const list = musings().slice();
+    const ts = Date.now();
+    if (museEditingId) {
+      const i = list.findIndex((x) => x.id === museEditingId);
+      if (i >= 0) list[i] = { ...list[i], type: museDraftType, text, ts };
+    } else {
+      list.push({ id: newId(), type: museDraftType, text, date: selectedDate, ts });
+    }
+    setMusings(list);
+    closeMuseForm();
+    renderMusings();
+    commitAndPersist(prev, "保存随想失败，已回滚");
+  });
+  museInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); museSaveBtn.click(); }
+    if (e.key === "Escape") closeMuseForm();
+  });
+
+  function renderMusings() {
+    const list = musings().slice().sort((a, b) => {
+      if (a.type !== b.type) return a.type === "musing" ? -1 : 1;
+      return b.ts - a.ts;
+    });
+    if (list.length === 0) {
+      museListEl.innerHTML = `<li class="muse-empty">这里还空着 — 记一笔随想或灵感吧。</li>`;
+      return;
+    }
+    museListEl.innerHTML = "";
+    for (const m of list) {
+      const li = document.createElement("li");
+      li.className = `muse-item ${m.type}`;
+      const body = document.createElement("div");
+      body.className = "muse-body";
+      const dot = document.createElement("span");
+      dot.className = "muse-dot";
+      const text = document.createElement("span");
+      text.className = "muse-text";
+      text.textContent = m.text;
+      const ts = document.createElement("span");
+      ts.className = "muse-ts";
+      ts.title = new Date(m.ts).toLocaleString();
+      ts.textContent = new Date(m.ts).toLocaleDateString();
+      body.append(dot, text);
+      const edits = document.createElement("span");
+      edits.className = "muse-edits";
+      const editBtn = document.createElement("button");
+      editBtn.type = "button"; editBtn.title = "编辑"; editBtn.textContent = "✎";
+      editBtn.addEventListener("click", () => openMuseForm(m));
+      const delBtn = document.createElement("button");
+      delBtn.type = "button"; delBtn.title = "删除"; delBtn.textContent = "✕";
+      delBtn.addEventListener("click", () => {
+        if (!confirm("删除这一条？")) return;
+        const prev = snapshot();
+        setMusings(musings().filter((x) => x.id !== m.id));
+        renderMusings();
+        commitAndPersist(prev, "删除失败，已回滚");
+      });
+      edits.append(editBtn, delBtn);
+      if (isAuthed) li.append(body, ts, edits);
+      else li.append(body, ts);
+      museListEl.append(li);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -996,6 +1221,7 @@ function baseColor(cat: string): string {
     loginBtn.title = v ? "已登录（点击退出）" : "回答问题以管理";
     editActions.hidden = !v;
     renderAgenda();
+    renderMusings();
   }
 
   // ---------------------------------------------------------------------------
@@ -1183,7 +1409,7 @@ function baseColor(cat: string): string {
   async function refreshFromServer() {
     try {
       const res = await fetch(`${apiBase}/schedule`, { credentials: "omit" });
-      if (res.ok) { const data = await res.json(); if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); } }
+      if (res.ok) { const data = await res.json(); if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); renderMusings(); } }
     } catch { /* ignore */ }
   }
 
@@ -1213,5 +1439,6 @@ function baseColor(cat: string): string {
 
   renderCalendar();
   renderAgenda();
+  renderMusings();
 </script>
 </BaseLayout>
