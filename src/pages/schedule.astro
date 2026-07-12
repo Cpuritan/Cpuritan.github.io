@@ -196,7 +196,7 @@ function baseColor(cat: string): string {
 
   /* Override base .page-shell 920px cap so the schedule page can use the full viewport width */
   .page-shell:has(.sched-page) {
-    max-width: 1280px;
+    max-width: 920px;
     padding: 1.4rem 1.2rem 3rem;
   }
 
@@ -221,12 +221,15 @@ function baseColor(cat: string): string {
 
   .sched-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
-    gap: 1.2rem; align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 1.2rem; align-items: start;
   }
+  /* Right column = agenda + musings, stacked vertically.
+     No sticky: musings naturally sit right under agenda, and as you add
+     agenda entries the musings panel slides down with it. */
   .right-panel {
     display: flex; flex-direction: column; gap: 1.2rem;
-    position: sticky; top: 80px;
+    min-width: 0;
   }
 
   /* ===== Calendar ===== */
@@ -462,15 +465,18 @@ function baseColor(cat: string): string {
   body.is-admin .muse-item .muse-edits { display: flex; }
   .muse-empty { padding: 1rem 0.7rem; text-align: center; color: var(--st-muted); font-size: 0.82rem; }
 
-  /* Only collapse to a single column on very narrow screens (phones).
-     The two-column layout is preserved through shrink-down to ~360px so
-     that resizing a desktop window does NOT prematurely stack the panels. */
-  @media (max-width: 560px) {
-    .page-shell:has(.sched-page) { padding: 1rem 0.6rem 2.4rem; }
+  /* Shrink to single column when the viewport can no longer comfortably hold
+     the calendar + right column side-by-side at the unified 920px page width
+     (~920 - some gap/padding ≈ 768). Below this, the right column (agenda +
+     musings) flows under the calendar — both on tablets-on-shrink and phones. */
+  @media (max-width: 768px) {
     .sched-grid { grid-template-columns: 1fr; }
-    .right-panel { position: static; }
     .cal-cell { height: 96px; padding: 0.25rem 0.25rem 0.15rem; }
     .tb-label { min-width: 5rem; font-size: 0.82rem; }
+  }
+  @media (max-width: 560px) {
+    .page-shell:has(.sched-page) { padding: 1rem 0.6rem 2.4rem; }
+    .cal-cell { height: 84px; }
   }
 </style>
 
