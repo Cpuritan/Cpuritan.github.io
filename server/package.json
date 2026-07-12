@@ -2,7 +2,7 @@
   "name": "cpuritan-schedule-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Tiny API for online editing of the cpuritan.cn schedule calendar.",
+  "description": "Dev-only API for editing the cpuritan.cn schedule calendar during local development.",
   "main": "index.js",
   "type": "module",
   "engines": { "node": ">=18.17.1" },
@@ -11,8 +11,6 @@
     "dev": "node --watch index.js"
   },
   "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "express": "^4.21.2"
   }
 }

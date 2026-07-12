@@ -32,7 +32,7 @@ function baseColor(cat: string): string {
     class="sched-page"
     data-schedule={JSON.stringify(scheduleFallback)}
     data-today={todayStr}
-    data-api="/api"
+    data-api="https://cpuritan-schedule.bqf-cpuritan.workers.dev/api"
   >
     <header class="sched-toolbar">
       <div class="sched-title"><h1>Calendar</h1></div>
@@ -71,7 +71,7 @@ function baseColor(cat: string): string {
   </div>
 
   <!-- ===== Login dialog ===== -->
-  <dialog class="dlg" id="login-dlg" aria-label="登录">
+  <dialog class="dlg" id="login-dlg" aria-label="回答问题">
     <form method="dialog" class="dlg-form" id="login-form">
       <h3>回答问题以编辑日程</h3>
       <label class="dlg-field">
@@ -845,7 +845,7 @@ function baseColor(cat: string): string {
   // ---------------------------------------------------------------------------
   async function saveDate(date: string, entries: ScheduleEntry[]) {
     const res = await fetch(`${apiBase}/schedule/save`, {
-      method: "POST", credentials: "same-origin",
+      method: "POST", credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, entries }),
     });
@@ -871,7 +871,7 @@ function baseColor(cat: string): string {
     if (plist.find((p: any) => p.id === id)) {
       schedule.__periods__ = plist.filter((p: any) => p.id !== id);
       await fetch(`${apiBase}/schedule/saveAll`, {
-        method: "POST", credentials: "same-origin",
+        method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ schedule }),
       });
@@ -881,47 +881,77 @@ function baseColor(cat: string): string {
   }
 
   // ---------------------------------------------------------------------------
-  // Login
+  // Login (pure client-side Q&A — no server, no network call)
   // ---------------------------------------------------------------------------
+  // Auth lives entirely in the browser: sessionStorage records the unlock
+  // timestamp; ttlSec bounds how long the authed state survives. There is
+  // intentionally NO server round-trip — the deployed site is a static
+  // GitHub Pages build and has no backend, so any fetch to /api/login would
+  // always 405.
+  const CHALLENGE_QUESTION = "章鱼哥的紧箍咒是？";
+  const ACCEPTED_ANSWERS = ["海绵宝宝", "bob"];
+  const AUTH_KEY = "sched_auth_v1";
+  const AUTH_TTL_SEC = 14 * 24 * 60 * 60; // 14 days, matches the legacy cookie TTL
+
+  function isAnswerValid(s: string): boolean {
+    const norm = String(s).toLowerCase().trim();
+    return ACCEPTED_ANSWERS.some(a => a.toLowerCase() === norm);
+  }
+
+  function readStoredAuth(): boolean {
+    try {
+      const raw = sessionStorage.getItem(AUTH_KEY);
+      if (!raw) return false;
+      const ts = Number(raw);
+      if (!Number.isFinite(ts)) return false;
+      if (Date.now() / 1000 - ts > AUTH_TTL_SEC) {
+        sessionStorage.removeItem(AUTH_KEY);
+        return false;
+      }
+      return true;
+    } catch { return false; }
+  }
+
+  function writeStoredAuth() {
+    try { sessionStorage.setItem(AUTH_KEY, String(Math.floor(Date.now() / 1000))); } catch { /* ignore */ }
+  }
+  function clearStoredAuth() {
+    try { sessionStorage.removeItem(AUTH_KEY); } catch { /* ignore */ }
+  }
+
   const loginDlg = document.getElementById("login-dlg") as HTMLDialogElement;
   const loginForm = document.getElementById("login-form") as HTMLFormElement;
   const loginError = document.getElementById("login-error")!;
   const loginAnswer = document.getElementById("login-answer") as HTMLInputElement;
   const loginCancel = document.getElementById("login-cancel")!;
-
-  // Fetch challenge question on mount
-  fetch(`${apiBase}/challenge`).then(r => r.ok ? r.json() : null).then(d => {
-    if (d?.question) document.getElementById("login-question")!.textContent = d.question;
-  }).catch(() => {});
+  document.getElementById("login-question")!.textContent = CHALLENGE_QUESTION;
 
   loginBtn.addEventListener("click", () => {
-    if (isAuthed) { fetch(`${apiBase}/logout`, { method:"POST", credentials:"same-origin" }).catch(()=>{}); setAuthed(false); }
-    else { loginError.hidden = true; loginDlg.showModal(); setTimeout(() => loginAnswer.focus(), 50); }
+    if (isAuthed) { clearStoredAuth(); setAuthed(false); }
+    else { loginError.hidden = true; loginForm.reset(); loginDlg.showModal(); setTimeout(() => loginAnswer.focus(), 50); }
   });
   loginCancel.addEventListener("click", () => loginDlg.close());
-  loginForm.addEventListener("submit", async (e) => {
+  loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const answer = String(new FormData(loginForm).get("answer") || "");
+    if (!isAnswerValid(answer)) {
+      loginError.textContent = "答错了，再试一次";
+      loginError.hidden = false;
+      loginAnswer.focus();
+      loginAnswer.select();
+      return;
+    }
+    writeStoredAuth();
+    loginDlg.close(); loginForm.reset();
     loginError.hidden = true;
-    try {
-      const res = await fetch(`${apiBase}/login`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body: JSON.stringify({answer}) });
-      if (!res.ok) {
-        let msg = "回答错误";
-        try { const data = await res.json(); if (data?.error) msg = data.error; }
-        catch { msg = `服务器错误 (HTTP ${res.status})`; }
-        loginError.textContent = msg;
-        loginError.hidden = false;
-        return;
-      }
-      loginDlg.close(); loginForm.reset(); setAuthed(true);
-    } catch (err: any) { loginError.textContent = err?.message || "网络错误"; loginError.hidden = false; }
+    setAuthed(true);
   });
 
   function setAuthed(v: boolean) {
     isAuthed = v;
     document.body.classList.toggle("is-admin", v);
     loginBtn.classList.toggle("is-authed", v);
-    loginBtn.title = v ? "已登录" : "回答问题以管理";
+    loginBtn.title = v ? "已登录（点击退出）" : "回答问题以管理";
     editActions.hidden = !v;
     renderAgenda();
   }
@@ -1027,7 +1057,7 @@ function baseColor(cat: string): string {
       const plist = schedule.__periods__ || [];
       if (plist.find((p: any) => p.id === id)) {
         schedule.__periods__ = plist.filter((p: any) => p.id !== id);
-        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
         renderCalendar(); renderAgenda(); return;
       }
       await deleteEntry(editDate.value, id);
@@ -1064,7 +1094,7 @@ function baseColor(cat: string): string {
         if (pIdx >= 0) plist[pIdx] = periodEntry;
         else plist.push(periodEntry);
         schedule.__periods__ = plist;
-        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
+        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
         if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(txt || "保存失败"); }
         selectedDate = start; const { y, m } = parseDate(start);
         if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
@@ -1101,7 +1131,7 @@ function baseColor(cat: string): string {
   let lastDay = todayStr;
   async function refreshFromServer() {
     try {
-      const res = await fetch(`${apiBase}/schedule`, { credentials: "same-origin" });
+      const res = await fetch(`${apiBase}/schedule`, { credentials: "include" });
       if (res.ok) { const data = await res.json(); if (data && typeof data === "object") { schedule = data as Schedule; renderCalendar(); renderAgenda(); } }
     } catch { /* ignore */ }
   }
@@ -1127,7 +1157,8 @@ function baseColor(cat: string): string {
   }
   window.addEventListener("resize", scheduleBandLayout);
 
-  fetch(`${apiBase}/auth/check`, { credentials: "same-origin" }).then(r => r.ok ? r.json() : Promise.reject()).then(() => setAuthed(true)).catch(() => setAuthed(false));
+  // Restore auth from sessionStorage (no server call — GitHub Pages has no backend).
+  setAuthed(readStoredAuth());
 
   renderCalendar();
   renderAgenda();

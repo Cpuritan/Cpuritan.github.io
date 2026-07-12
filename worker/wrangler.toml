@@ -1,0 +1,24 @@
+name = "cpuritan-schedule"
+main = "index.js"
+compatibility_date = "2025-04-01"
+
+# The deployed URL will be:
+#   https://cpuritan-schedule.<your-subdomain>.workers.dev
+#
+# After `wrangler deploy`, paste that URL into src/pages/schedule.astro's
+# data-api attribute (or set SCHEDULE_API_BASE in your build env).
+
+# Secrets — set these once with:
+#   npx wrangler secret put GH_TOKEN
+# It will prompt for the value. Use a GitHub fine-grained PAT scoped to:
+#   - Repository: Cpuritan/Cpuritan.github.io
+#   - Permissions: Contents: Read and write
+# The token never appears in this file, never appears in the worker bundle,
+# and never appears in the browser.
+
+# Optional overrides (defaults are baked into worker/index.js):
+# [vars]
+# GH_REPO_OWNER = "Cpuritan"
+# GH_REPO_NAME  = "Cpuritan.github.io"
+# GH_FILE_PATH  = "src/data/schedule.json"
+# GH_BRANCH     = "main"

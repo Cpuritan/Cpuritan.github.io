@@ -1,14 +1,11 @@
 import express from "express";
-import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
 
 // Load .env if present (lets us avoid a `dotenv` dependency).
 // Never overrides process.env values that were set on the command line —
-// those always win, soservers can be re-pinned ad-hoc.
+// those always win, so servers can be re-pinned ad-hoc.
 try {
   const envPath = path.join(import.meta.dirname, ".env");
   const raw = readFileSync(envPath, "utf8");
@@ -18,20 +15,22 @@ try {
     if (process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
 } catch {
-  // .env missing — fine, fall back to real env vars or PASSWORD=undefined
+  // .env missing — fine, fall back to real env vars.
 }
 
 const PORT = Number(process.env.PORT ?? 3010);
 const DATA_DIR = path.resolve(process.env.DATA_DIR ?? path.join(import.meta.dirname, "..", "src", "data"));
 const DATA_FILE = path.join(DATA_DIR, "schedule.json");
-const TOKEN_TTL = "14d";
 
-// JWT signing secret — derived from PASSWORD if set, otherwise a fixed internal default.
-const jwtSecretSource = process.env.PASSWORD || "cpuritan-schedule-internal-v1";
-const secret = crypto.createHash("sha256").update(jwtSecretSource).digest();
+// NOTE: Authentication has been removed entirely — login is now handled
+// purely on the client side (Q&A in the browser sessionStorage). This
+// server is only used during local `astro dev` (Vite proxy on port 4321 ->
+// 3010); it's never exposed to the public internet. Anyone who can reach
+// this loopback server can already read/write your source files, so the
+// previous JWT/cookie auth provided no real protection here.
+
 const app = express();
 app.use(express.json({ limit: "1mb" }));
-app.use(cookieParser());
 
 // ---- helpers ---------------------------------------------------------------
 
@@ -50,17 +49,6 @@ async function writeSchedule(data) {
   await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
   await fs.writeFile(tmp, JSON.stringify(data, null, 2) + "\n", "utf8");
   await fs.rename(tmp, DATA_FILE);
-}
-
-function requireAuth(req, res, next) {
-  const token = req.cookies?.token ?? req.headers["x-auth-token"];
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
-  try {
-    jwt.verify(token, secret);
-    next();
-  } catch {
-    return res.status(403).json({ error: "Invalid or expired token" });
-  }
 }
 
 /** Validate an array of event entries (reject malformed server-side). */
@@ -94,48 +82,7 @@ app.get("/api/schedule", async (_req, res) => {
   }
 });
 
-// ---- Challenge / login (Q&A instead of password) -------------------------
-const CHALLENGE_QUESTION = "章鱼哥的紧箍咒是？";
-const ACCEPTED_ANSWERS = ["海绵宝宝", "bob"];
-const ACCEPTED_NORMALIZED = ACCEPTED_ANSWERS.map(normalizeAnswer);
-
-/** Lowercase + trim + strip surrounding whitespace; ASCII-only comparison. */
-function normalizeAnswer(s) {
-  return String(s).toLowerCase().trim();
-}
-
-app.get("/api/challenge", (_req, res) => {
-  res.json({ question: CHALLENGE_QUESTION });
-});
-
-app.post("/api/login", (req, res) => {
-  const { answer } = req.body ?? {};
-  if (typeof answer !== "string" || answer.length === 0) {
-    return res.status(400).json({ error: "回答不能为空" });
-  }
-  const norm = normalizeAnswer(answer);
-  const ok = ACCEPTED_NORMALIZED.includes(norm);
-  if (!ok) return res.status(401).json({ error: "答错了，再试一次" });
-  const token = jwt.sign({ role: "admin" }, secret, { expiresIn: TOKEN_TTL });
-  res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 14 * 24 * 60 * 60 * 1000,
-    // secure: true,  // enable in production behind HTTPS
-  });
-  res.json({ success: true });
-});
-
-app.post("/api/logout", (_req, res) => {
-  res.clearCookie("token");
-  res.json({ success: true });
-});
-
-app.get("/api/auth/check", requireAuth, (_req, res) => {
-  res.json({ authenticated: true });
-});
-
-app.post("/api/schedule/save", requireAuth, async (req, res) => {
+app.post("/api/schedule/save", async (req, res) => {
   const { date, entries } = req.body ?? {};
   if (typeof date !== "string" || !DATE_RE.test(date)) {
     return res.status(400).json({ error: "Invalid date, expected YYYY-MM-DD" });
@@ -156,7 +103,7 @@ app.post("/api/schedule/save", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/api/schedule/saveAll", requireAuth, async (req, res) => {
+app.post("/api/schedule/saveAll", async (req, res) => {
   const { schedule } = req.body ?? {};
   if (typeof schedule !== "object" || schedule === null || Array.isArray(schedule)) {
     return res.status(400).json({ error: "Invalid schedule object" });
