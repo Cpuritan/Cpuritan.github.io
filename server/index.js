@@ -22,19 +22,13 @@ try {
 }
 
 const PORT = Number(process.env.PORT ?? 3010);
-const PASSWORD = process.env.PASSWORD ?? "";
 const DATA_DIR = path.resolve(process.env.DATA_DIR ?? path.join(import.meta.dirname, "..", "src", "data"));
 const DATA_FILE = path.join(DATA_DIR, "schedule.json");
 const TOKEN_TTL = "14d";
 
-if (!PASSWORD) {
-  console.error("[schedule] FATAL: PASSWORD env var must be set.");
-  console.error("           Either put PASSWORD=... in server/.env, or pass it on the CLI:");
-  console.error("           Example: PASSWORD=secret node index.js");
-  process.exit(1);
-}
-
-const secret = crypto.createHash("sha256").update(PASSWORD).digest();
+// JWT signing secret — derived from PASSWORD if set, otherwise a fixed internal default.
+const jwtSecretSource = process.env.PASSWORD || "cpuritan-schedule-internal-v1";
+const secret = crypto.createHash("sha256").update(jwtSecretSource).digest();
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
@@ -100,16 +94,28 @@ app.get("/api/schedule", async (_req, res) => {
   }
 });
 
+// ---- Challenge / login (Q&A instead of password) -------------------------
+const CHALLENGE_QUESTION = "章鱼哥的紧箍咒是？";
+const ACCEPTED_ANSWERS = ["海绵宝宝", "bob"];
+const ACCEPTED_NORMALIZED = ACCEPTED_ANSWERS.map(normalizeAnswer);
+
+/** Lowercase + trim + strip surrounding whitespace; ASCII-only comparison. */
+function normalizeAnswer(s) {
+  return String(s).toLowerCase().trim();
+}
+
+app.get("/api/challenge", (_req, res) => {
+  res.json({ question: CHALLENGE_QUESTION });
+});
+
 app.post("/api/login", (req, res) => {
-  const { password } = req.body ?? {};
-  if (typeof password !== "string" || password.length === 0) {
-    return res.status(400).json({ error: "Password required" });
+  const { answer } = req.body ?? {};
+  if (typeof answer !== "string" || answer.length === 0) {
+    return res.status(400).json({ error: "回答不能为空" });
   }
-  // constant-time compare to avoid trivial timing leaks
-  const a = Buffer.from(password);
-  const b = Buffer.from(PASSWORD);
-  const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
-  if (!ok) return res.status(401).json({ error: "Wrong password" });
+  const norm = normalizeAnswer(answer);
+  const ok = ACCEPTED_NORMALIZED.includes(norm);
+  if (!ok) return res.status(401).json({ error: "答错了，再试一次" });
   const token = jwt.sign({ role: "admin" }, secret, { expiresIn: TOKEN_TTL });
   res.cookie("token", token, {
     httpOnly: true,

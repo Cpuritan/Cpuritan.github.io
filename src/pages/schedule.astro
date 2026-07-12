@@ -43,7 +43,7 @@ function baseColor(cat: string): string {
           <button type="button" class="tb-btn" id="next-month" aria-label="下月">›</button>
         </div>
         <button type="button" class="tb-btn tb-today" id="today-btn">今日</button>
-        <button type="button" class="tb-btn tb-login" id="login-btn" title="登录管理">⚙</button>
+        <button type="button" class="tb-btn tb-login" id="login-btn" title="回答问题以管理">⚙</button>
       </div>
     </header>
 
@@ -73,15 +73,15 @@ function baseColor(cat: string): string {
   <!-- ===== Login dialog ===== -->
   <dialog class="dlg" id="login-dlg" aria-label="登录">
     <form method="dialog" class="dlg-form" id="login-form">
-      <h3>登录以编辑日程</h3>
+      <h3>回答问题以编辑日程</h3>
       <label class="dlg-field">
-        <span>密码</span>
-        <input type="password" name="password" id="login-password" autocomplete="current-password" required />
+        <span id="login-question">章鱼哥的紧箍咒是？</span>
+        <input type="text" name="answer" id="login-answer" autocomplete="off" required />
       </label>
       <p class="dlg-error" id="login-error" hidden></p>
       <div class="dlg-actions">
         <button type="button" class="ed-btn ghost" id="login-cancel">取消</button>
-        <button type="submit" class="ed-btn primary">登录</button>
+        <button type="submit" class="ed-btn primary">提交</button>
       </div>
     </form>
   </dialog>
@@ -886,22 +886,27 @@ function baseColor(cat: string): string {
   const loginDlg = document.getElementById("login-dlg") as HTMLDialogElement;
   const loginForm = document.getElementById("login-form") as HTMLFormElement;
   const loginError = document.getElementById("login-error")!;
-  const loginPassword = document.getElementById("login-password") as HTMLInputElement;
+  const loginAnswer = document.getElementById("login-answer") as HTMLInputElement;
   const loginCancel = document.getElementById("login-cancel")!;
+
+  // Fetch challenge question on mount
+  fetch(`${apiBase}/challenge`).then(r => r.ok ? r.json() : null).then(d => {
+    if (d?.question) document.getElementById("login-question")!.textContent = d.question;
+  }).catch(() => {});
 
   loginBtn.addEventListener("click", () => {
     if (isAuthed) { fetch(`${apiBase}/logout`, { method:"POST", credentials:"same-origin" }).catch(()=>{}); setAuthed(false); }
-    else { loginError.hidden = true; loginDlg.showModal(); setTimeout(() => loginPassword.focus(), 50); }
+    else { loginError.hidden = true; loginDlg.showModal(); setTimeout(() => loginAnswer.focus(), 50); }
   });
   loginCancel.addEventListener("click", () => loginDlg.close());
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const password = String(new FormData(loginForm).get("password") || "");
+    const answer = String(new FormData(loginForm).get("answer") || "");
     loginError.hidden = true;
     try {
-      const res = await fetch(`${apiBase}/login`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body: JSON.stringify({password}) });
+      const res = await fetch(`${apiBase}/login`, { method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body: JSON.stringify({answer}) });
       if (!res.ok) {
-        let msg = "登录失败";
+        let msg = "回答错误";
         try { const data = await res.json(); if (data?.error) msg = data.error; }
         catch { msg = `服务器错误 (HTTP ${res.status})`; }
         loginError.textContent = msg;
@@ -916,7 +921,7 @@ function baseColor(cat: string): string {
     isAuthed = v;
     document.body.classList.toggle("is-admin", v);
     loginBtn.classList.toggle("is-authed", v);
-    loginBtn.title = v ? "已登录" : "登录管理";
+    loginBtn.title = v ? "已登录" : "回答问题以管理";
     editActions.hidden = !v;
     renderAgenda();
   }
