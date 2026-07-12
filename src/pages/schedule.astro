@@ -61,6 +61,7 @@ function baseColor(cat: string): string {
           <h2 id="agenda-title">今日日程</h2>
           <button type="button" class="day-btn" id="next-day" aria-label="后一天">›</button>
           <span class="agenda-count" id="agenda-count"></span>
+          <span id="save-indicator" hidden style="margin-left:auto;font-size:.7rem;color:var(--st-muted);font-weight:400;">保存中…</span>
         </div>
         <ul class="agenda-list" id="agenda-list"></ul>
         <div class="agenda-edit-actions" id="agenda-edit-actions" hidden>
@@ -210,7 +211,7 @@ function baseColor(cat: string): string {
   }
   .cal-bands-layer .period-band { pointer-events: auto; }
   .cal-cell {
-    position: relative; height: 148px; padding: 0.4rem 0.35rem 0.3rem;
+    position: relative; height: 124px; padding: 0.4rem 0.35rem 0.3rem;
     border-right: 1px solid #f2f2f2; border-bottom: 1px solid #f2f2f2;
     background: var(--st-bg); cursor: pointer; transition: background 0.1s ease;
     display: flex; flex-direction: column; gap: 0.18rem;
@@ -356,7 +357,7 @@ function baseColor(cat: string): string {
   @media (max-width: 760px) {
     .sched-grid { grid-template-columns: 1fr; }
     .agenda-panel { position: static; }
-    .cal-cell { height: 116px; padding: 0.25rem 0.25rem 0.15rem; }
+    .cal-cell { height: 100px; padding: 0.25rem 0.25rem 0.15rem; }
   }
 </style>
 
@@ -843,43 +844,81 @@ function baseColor(cat: string): string {
   }
 
   // ---------------------------------------------------------------------------
-  // Editing
+  // Editing (OPTIMISTIC: update local state + render first, save in background,
+  // roll back on failure so the UI stays responsive even on a slow link).
   // ---------------------------------------------------------------------------
-  async function saveDate(date: string, entries: ScheduleEntry[]) {
-    const res = await fetch(`${apiBase}/schedule/save`, {
-      method: "POST", credentials: "omit",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, entries }),
-    });
-    if (!res.ok) { const t = await res.text().catch(() => ""); throw new Error(t || `保存失败 (${res.status})`); }
-    const data = await res.json();
-    if (data.entries) schedule[date] = data.entries;
-    else if (data.entries?.length === 0) delete schedule[date];
+  // In-flight save promises keyed by an incrementing counter, so we can show
+  // a subtle "saving…" indicator without blocking interaction.
+  let saveInFlight = 0;
+  const updateSaving = () => {
+    const el = document.getElementById("save-indicator");
+    if (el) el.hidden = saveInFlight === 0;
+  };
+
+  async function persistSave(scheduleSnapshot: Schedule): Promise<void> {
+    saveInFlight++; updateSaving();
+    try {
+      const res = await fetch(`${apiBase}/schedule/saveAll`, {
+        method: "POST", credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule: scheduleSnapshot }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `保存失败 (${res.status})`);
+      }
+    } finally {
+      saveInFlight--; updateSaving();
+    }
+  }
+
+  // Always send the entire (already-mutated) schedule object. saveAll only
+  // overwrites known keys (__periods__ + yyyy-mm-dd), preserving the rest.
+  function commitAndPersist(prevSnapshot: Schedule, errMsg = "保存失败，已回滚"): void {
     renderCalendar(); renderAgenda();
+    // Fire-and-forget; rollback on rejection.
+    persistSave(structuredClone(schedule)).catch((err) => {
+      console.error("Save failed, rolling back", err);
+      schedule = prevSnapshot;
+      renderCalendar(); renderAgenda();
+      alert(err?.message || errMsg);
+    });
+  }
+
+  function snapshot(): Schedule {
+    return structuredClone(schedule);
+  }
+
+  async function saveDate(date: string, entries: ScheduleEntry[]) {
+    const prev = snapshot();
+    const arr = Array.isArray(entries) ? entries : [];
+    if (arr.length === 0) delete schedule[date]; else schedule[date] = arr;
+    commitAndPersist(prev);
   }
 
   async function addOrUpdateEntry(date: string, entry: ScheduleEntry) {
+    const prev = snapshot();
     const arr = [...(schedule[date] || [])];
     const idx = arr.findIndex((e) => e.id === entry.id);
     if (idx >= 0) arr[idx] = entry;
     else { entry.id = entry.id || genId(); arr.push(entry); }
-    await saveDate(date, arr);
+    schedule[date] = arr;
+    commitAndPersist(prev);
   }
 
   async function deleteEntry(date: string, id: string) {
-    const fresh = (schedule[date] || []).filter((e) => e.id !== id);
-    // also check period entries
+    const prev = snapshot();
+    // Try period entries first.
     const plist = schedule.__periods__ || [];
     if (plist.find((p: any) => p.id === id)) {
       schedule.__periods__ = plist.filter((p: any) => p.id !== id);
-      await fetch(`${apiBase}/schedule/saveAll`, {
-        method: "POST", credentials: "omit",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schedule }),
-      });
-      renderCalendar(); renderAgenda(); return;
+      commitAndPersist(prev);
+      return;
     }
-    await saveDate(date, fresh);
+    // Otherwise it's a single-day entry.
+    schedule[date] = (schedule[date] || []).filter((e) => e.id !== id);
+    if (schedule[date].length === 0) delete schedule[date];
+    commitAndPersist(prev);
   }
 
   // ---------------------------------------------------------------------------
@@ -1051,22 +1090,25 @@ function baseColor(cat: string): string {
   document.getElementById("add-btn")?.addEventListener("click", () => openEditDialog(selectedDate));
   editCancel.addEventListener("click", () => editDlg.close());
 
-  editDelete.addEventListener("click", async () => {
+  editDelete.addEventListener("click", () => {
     const id = editId.value;
     if (!id || !confirm("删除该条日程？")) return;
     editDlg.close();
-    try {
-      const plist = schedule.__periods__ || [];
-      if (plist.find((p: any) => p.id === id)) {
-        schedule.__periods__ = plist.filter((p: any) => p.id !== id);
-        await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"omit", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
-        renderCalendar(); renderAgenda(); return;
-      }
-      await deleteEntry(editDate.value, id);
-    } catch (err: any) { alert(err?.message || "删除失败"); }
+    const date = editDate.value;
+    const prev = snapshot();
+    // Check period entries first.
+    const plist = schedule.__periods__ || [];
+    if (plist.find((p: any) => p.id === id)) {
+      schedule.__periods__ = plist.filter((p: any) => p.id !== id);
+      commitAndPersist(prev);
+      return;
+    }
+    schedule[date] = (schedule[date] || []).filter((e: any) => e.id !== id);
+    if (schedule[date].length === 0) delete schedule[date];
+    commitAndPersist(prev);
   });
 
-  editForm.addEventListener("submit", async (e) => {
+  editForm.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!editTitleInput.value.trim()) { editError.textContent = "请填写标题"; editError.hidden = false; return; }
     const color = editColor.value;
@@ -1075,16 +1117,19 @@ function baseColor(cat: string): string {
       time: editTime.value.trim() || "全天", title: editTitleInput.value.trim(),
       category: editCategory.value, color: colorVal,
     };
+    const prev = snapshot();
     try {
       if (currentMode === "single") {
         const date = editDate.value;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { editError.textContent = "日期格式错误"; editError.hidden = false; return; }
         const entry = { ...baseEntry, id: editId.value || genId() };
-        await addOrUpdateEntry(date, entry);
+        const arr = [...(schedule[date] || [])];
+        const idx = arr.findIndex((x: any) => x.id === entry.id);
+        if (idx >= 0) arr[idx] = entry; else arr.push(entry);
+        schedule[date] = arr;
         if (date !== selectedDate) {
           selectedDate = date; const { y, m } = parseDate(date);
           if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
-          renderCalendar();
         }
       } else {
         const start = editStartDate.value; const end = editEndDate.value;
@@ -1093,16 +1138,13 @@ function baseColor(cat: string): string {
         const periodEntry = { id: editId.value || genId(), start, end, time: baseEntry.time, title: baseEntry.title, category: baseEntry.category, color: baseEntry.color, done: 0 };
         const plist = [...(schedule.__periods__ || [])];
         const pIdx = plist.findIndex((p: any) => p.id === periodEntry.id);
-        if (pIdx >= 0) plist[pIdx] = periodEntry;
-        else plist.push(periodEntry);
+        if (pIdx >= 0) plist[pIdx] = periodEntry; else plist.push(periodEntry);
         schedule.__periods__ = plist;
-        const res = await fetch(`${apiBase}/schedule/saveAll`, { method:"POST", credentials:"omit", headers:{"Content-Type":"application/json"}, body:JSON.stringify({schedule}) });
-        if (!res.ok) { const txt = await res.text().catch(() => ""); throw new Error(txt || "保存失败"); }
         selectedDate = start; const { y, m } = parseDate(start);
         if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
-        renderCalendar();
       }
-      editDlg.close(); renderAgenda();
+      editDlg.close();
+      commitAndPersist(prev);
     } catch (err: any) { editError.textContent = err?.message || "保存失败"; editError.hidden = false; }
   });
 
