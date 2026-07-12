@@ -135,16 +135,7 @@
       "id": "emrgmb4oof0ejxw"
     }
   ],
-  "__periods__": [
-    {
-      "id": "per2",
-      "title": "项目冲刺周",
-      "start": "2026-07-22",
-      "end": "2026-07-25",
-      "time": "全天",
-      "category": "research"
-    }
-  ],
+  "__periods__": [],
   "2026-07-09": [
     {
       "time": "全天",
