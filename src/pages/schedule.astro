@@ -267,16 +267,16 @@ function baseColor(cat: string): string {
   .cal-cell.today { background: #f8faff; }
   .cal-cell.today .day-num {
     background: var(--st-today-bd); color: #fff;
-    box-shadow: 0 1px 4px rgba(43,110,211,0.25);
+    box-shadow: 0 1px 3px rgba(43,110,211,0.22);
   }
   .cal-cell.selected { background: #f4f7fd; }
-  .cal-cell.selected .day-num { box-shadow: 0 0 0 1.5px var(--st-pop); color: var(--st-pop); }
-  .cal-cell.today.selected .day-num { box-shadow: 0 0 0 1.5px var(--st-pop); background: var(--st-today-bd); color: #fff; }
+  .cal-cell.selected .day-num { box-shadow: 0 0 0 1.25px var(--st-pop); color: var(--st-pop); }
+  .cal-cell.today.selected .day-num { box-shadow: 0 0 0 1.25px var(--st-pop); background: var(--st-today-bd); color: #fff; }
 
   .day-num {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 1.55rem; height: 1.55rem; border-radius: 8px;
-    font-size: 0.82rem; font-weight: 500; color: var(--st-text);
+    width: 1.35rem; height: 1.35rem; border-radius: 50%;
+    font-size: 0.75rem; font-weight: 500; color: var(--st-text);
     transition: all 0.12s ease; margin-bottom: 0;
   }
 
@@ -486,7 +486,7 @@ function baseColor(cat: string): string {
     :root { --cal-chip-h: 0.8rem; --cal-chip-gap: 0.12rem; }
     .sched-grid { grid-template-columns: 1fr; }
     .cal-cell { height: 96px; padding: 0.3rem 0.25rem 0.2rem; }
-    .cal-cell .day-num { width: 1.3rem; height: 1.3rem; font-size: 0.72rem; border-radius: 6px; }
+    .cal-cell .day-num { width: 1.2rem; height: 1.2rem; font-size: 0.68rem; border-radius: 50%; }
     .cal-cell .chip,
     .period-band { font-size: 0.62rem; padding: 0 0.25rem; border-left-width: 2px; }
     .tb-label { min-width: 5rem; font-size: 0.82rem; }
@@ -495,7 +495,7 @@ function baseColor(cat: string): string {
     :root { --cal-chip-h: 0.67rem; --cal-chip-gap: 0.1rem; }
     .page-shell:has(.sched-page) { padding: 1rem 0.6rem 2.4rem; }
     .cal-cell { height: 84px; padding: 0.2rem 0.2rem 0.12rem; }
-    .cal-cell .day-num { width: 1.1rem; height: 1.1rem; font-size: 0.65rem; border-radius: 5px; }
+    .cal-cell .day-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; border-radius: 50%; }
     .cal-cell .chip,
     .period-band { font-size: 0.54rem; padding: 0 0.2rem; border-left-width: 1.5px; }
   }
