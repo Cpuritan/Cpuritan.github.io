@@ -742,7 +742,7 @@ function baseColor(cat: string): string {
 
     // Pre-load the done map so period bands read the correct key format:
     // "${id}_${date}" — matching what doneKey() produces for isPeriod entries.
-    const doneMap = loadDone();
+    const doneMap = schedule.__done__ || {};
 
     for (let slotIdx = 0; slotIdx < plist.length; slotIdx++) {
       const p = plist[slotIdx];
