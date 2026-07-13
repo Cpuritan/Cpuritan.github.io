@@ -551,32 +551,74 @@ function baseColor(cat: string): string {
   }
 
   // ---------------------------------------------------------------------------
-  // Done state (localStorage, no login needed)
+  // Done state
+  //
+  // Primary source of truth is schedule.__done__ (persisted via saveAll).
+  // localStorage keeps a local offline cache; on first load we merge any
+  // legacy localStorage entries into schedule.__done__ so existing users keep
+  // their marks. Each schedule entry/event itself no longer stores done.
   // ---------------------------------------------------------------------------
   const DONE_KEY = "sched_done_v1";
 
-  function loadDone(): Record<string, number> {
+  function legacyDoneMap(): Record<string, number> {
     try { return JSON.parse(localStorage.getItem(DONE_KEY) || "{}"); } catch { return {}; }
   }
-  function saveDone(map: Record<string, number>) { localStorage.setItem(DONE_KEY, JSON.stringify(map)); }
+  function saveLocalDone(map: Record<string, number>) {
+    localStorage.setItem(DONE_KEY, JSON.stringify(map));
+  }
 
   /** The done key for an entry on a given date. For non-period entries date is ignored. */
   function doneKey(entry: ScheduleEntry, date: string): string {
     return entry.isPeriod ? `${entry.id}_${date}` : (entry.id || entry.title);
   }
+
   /** Get done level for an entry on a date. */
   function getDone(entry: ScheduleEntry, date: string): number {
-    return loadDone()[doneKey(entry, date)] || 0;
+    return (schedule.__done__?.[doneKey(entry, date)] as number | undefined) || 0;
   }
-  /** Toggle done: 0→1→2→0. Returns new level. */
+
+  /** Mutate and persist done state. Returns new level. */
   function toggleDone(entry: ScheduleEntry, date: string): number {
-    const m = loadDone();
+    const prev = snapshot();
     const k = doneKey(entry, date);
-    const cur = m[k] || 0;
+    const cur = (schedule.__done__?.[k] as number | undefined) || 0;
     const next = cur >= 2 ? 0 : cur + 1;
-    if (next === 0) delete m[k]; else m[k] = next;
-    saveDone(m);
+
+    if (!schedule.__done__) schedule.__done__ = {};
+    if (next === 0) delete schedule.__done__[k];
+    else schedule.__done__[k] = next;
+
+    // Keep localStorage in sync as a best-effort offline cache.
+    const local = legacyDoneMap();
+    if (next === 0) delete local[k];
+    else local[k] = next;
+    saveLocalDone(local);
+
+    renderAgenda();
+    renderCalendar();
+    commitAndPersist(prev, "状态同步失败，已回滚");
     return next;
+  }
+
+  /** Merge legacy localStorage done marks into schedule.__done__ once. */
+  function migrateLegacyDone() {
+    const legacy = legacyDoneMap();
+    const keys = Object.keys(legacy);
+    if (keys.length === 0) return;
+    let changed = false;
+    if (!schedule.__done__) schedule.__done__ = {};
+    for (const k of keys) {
+      const v = legacy[k];
+      if ((v === 0 || v === 1 || v === 2) && schedule.__done__[k] === undefined) {
+        schedule.__done__[k] = v;
+        changed = true;
+      }
+    }
+    if (changed) {
+      persistSave(structuredClone(schedule)).catch((err) => {
+        console.error("Legacy done migration failed", err);
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -635,7 +677,7 @@ function baseColor(cat: string): string {
     const periods = schedule.__periods__ || [];
     const fromPeriods = periods
       .filter((p: any) => p.start <= d && d <= p.end)
-      .map((p: any) => ({ id: p.id, time: p.time || "全天", title: p.title, category: p.category, color: p.color, isPeriod: true, done: p.done }));
+      .map((p: any) => ({ id: p.id, time: p.time || "全天", title: p.title, category: p.category, color: p.color, isPeriod: true }));
     return [...fromPeriods, ...direct];
   }
   /** Non-period entries only (for calendar chip rendering). */
@@ -985,8 +1027,6 @@ function baseColor(cat: string): string {
           const entry = evts.find(e => e.id === id);
           if (!entry) return;
           toggleDone(entry, entryDate);
-          renderAgenda();
-          renderCalendar(); // calendar chips update too
         });
       }
 
@@ -1492,6 +1532,9 @@ function baseColor(cat: string): string {
 
   refreshFromServer();
   setInterval(refreshFromServer, 5 * 60000);
+
+  // Migrate legacy localStorage done marks once on startup, after first server sync.
+  migrateLegacyDone();
 
   // Re-render calendar on resize. We re-run renderCalendar() (not just
   // renderPeriodBands) because the absolute .cal-bands-layer overlay must be

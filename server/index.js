@@ -67,6 +67,29 @@ function cleanEntries(entries) {
   }).filter((e) => e.title);
 }
 
+/** Validate a musing / inspiration item. */
+function cleanMusing(m) {
+  const out = {};
+  if (typeof m?.id === "string" && m.id.length <= 64) out.id = m.id;
+  if (m?.type === "musing" || m?.type === "inspiration") out.type = m.type;
+  if (typeof m?.text === "string" && m.text.trim().length > 0 && m.text.length <= 500) out.text = m.text.trim();
+  if (typeof m?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m.date)) out.date = m.date;
+  if (typeof m?.ts === "number" && Number.isFinite(m.ts)) out.ts = m.ts;
+  return out.id && out.type && out.text ? out : null;
+}
+
+/** Validate a done overrides map (id -> 0/1/2, or id_date -> 0/1/2). */
+function cleanDoneMap(map) {
+  if (typeof map !== "object" || !map || Array.isArray(map)) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(map)) {
+    if (typeof k === "string" && k.length <= 128 && (v === 0 || v === 1 || v === 2)) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ---- routes ----------------------------------------------------------------
@@ -123,6 +146,16 @@ app.post("/api/schedule/saveAll", async (req, res) => {
           done: p.done === 0 || p.done === 1 || p.done === 2 ? p.done : 0,
         })).filter(p => p.id && p.start && p.end && p.title);
       }
+      continue;
+    }
+    if (k === "__musings__") {
+      if (Array.isArray(v)) {
+        cleaned.__musings__ = v.map(cleanMusing).filter(Boolean);
+      }
+      continue;
+    }
+    if (k === "__done__") {
+      cleaned.__done__ = cleanDoneMap(v);
       continue;
     }
     if (!DATE_RE.test(k)) continue;
