@@ -15,7 +15,8 @@
     "emrhquykmccr2jv": 1,
     "emrhlj4saoax4t7": 1,
     "emrhlgsbsp9bl87_2026-07-12": 2,
-    "emrixz5arnn3hiq": 1
+    "emrixz5arnn3hiq": 1,
+    "emrhlgsbsp9bl87_2026-07-13": 1
   },
   "__musings__": [
     {
@@ -31,6 +32,13 @@
       "text": "生产工具的革新，为什么对于不同人群的生产力效率提升有显著不同呢？人在使用生产工具，到变成生产力之间的媒介是什么呢？",
       "date": "2026-07-13",
       "ts": 1783935129063
+    },
+    {
+      "id": "mmrko5q038gqe",
+      "type": "musing",
+      "text": "敢于改变自己是“自我”觉醒的开始。“意识到”≠“改变”，从0到1是勇气的故事！",
+      "date": "2026-07-14",
+      "ts": 1784034634467
     }
   ],
   "2026-07-12": [
@@ -67,6 +75,46 @@
       "title": "eswa文字修改",
       "category": "research",
       "id": "emrixz5arnn3hiq"
+    }
+  ],
+  "2026-07-28": [
+    {
+      "time": "10:00",
+      "title": "申博截止",
+      "category": "ddl",
+      "id": "emrk1ykv6oz1i65"
+    }
+  ],
+  "2026-07-14": [
+    {
+      "time": "13:00",
+      "title": "介绍信准备",
+      "category": "life",
+      "id": "emrk1zj2y4xe27b"
+    },
+    {
+      "time": "16:00",
+      "title": "完善算法设计",
+      "category": "research",
+      "id": "emrk202awe8tdrn"
+    },
+    {
+      "time": "23:00",
+      "title": "夜跑",
+      "category": "life",
+      "id": "emrkltz9fpvsyxy"
+    },
+    {
+      "time": "24:00",
+      "title": "早睡！",
+      "category": "life",
+      "id": "emrko1qn6ja22pe"
+    },
+    {
+      "time": "24:00",
+      "title": "思考人生",
+      "category": "other",
+      "id": "emrko9p9s9l2j3q"
     }
   ]
 }
