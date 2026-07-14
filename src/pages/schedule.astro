@@ -906,7 +906,7 @@ function baseColor(cat: string): string {
       }
       const remaining = sorted.length - chipsHtml.length;
       const more = remaining > 0
-        ? `<span class="chip" style="${chipColors("other", 0)}">~${remaining}~</span>`
+        ? `<span class="chip" style="${chipColors("other", 0)}">${remaining} more~</span>`
         : "";
 
       html += `<div class="${cellClass}" data-date="${cellDate}">
