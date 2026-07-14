@@ -929,6 +929,7 @@ function baseColor(cat: string): string {
         }
         renderCalendar();
         renderAgenda();
+        renderMusings();
       });
     });
 
@@ -949,6 +950,7 @@ function baseColor(cat: string): string {
         if (y !== viewYear || m !== viewMonth) { viewYear = y; viewMonth = m; }
         renderCalendar();
         renderAgenda();
+        renderMusings();
         if (isAuthed) openEditDialog(selectedDate, id);
       });
     });
@@ -1214,12 +1216,23 @@ function baseColor(cat: string): string {
   });
 
   function renderMusings() {
-    const list = musings().slice().sort((a, b) => {
-      if (a.type !== b.type) return a.type === "musing" ? -1 : 1;
-      return b.ts - a.ts;
-    });
+    const all = musings();
+    const hasGlobal = all.length > 0;
+    // Filter to the currently selected date — musings are stored globally in
+    // __musings__ (each carries its own `date` field), but the panel should
+    // mirror the agenda and show only the selected day's items. Mirrors how
+    // renderAgenda() uses eventsFor(selectedDate).
+    const list = all
+      .filter((m) => m.date === selectedDate)
+      .slice()
+      .sort((a, b) => {
+        if (a.type !== b.type) return a.type === "musing" ? -1 : 1;
+        return b.ts - a.ts;
+      });
     if (list.length === 0) {
-      museListEl.innerHTML = `<li class="muse-empty">这里还空着 — 记一笔随想或灵感吧。</li>`;
+      museListEl.innerHTML = hasGlobal
+        ? `<li class="muse-empty">当天还没有随想 — 切到其他日期看看，或记一笔吧。</li>`
+        : `<li class="muse-empty">这里还空着 — 记一笔随想或灵感吧。</li>`;
       return;
     }
     museListEl.innerHTML = "";
@@ -1496,11 +1509,11 @@ function baseColor(cat: string): string {
   // ---------------------------------------------------------------------------
   // Navigation
   // ---------------------------------------------------------------------------
-  document.getElementById("prev-month")?.addEventListener("click", () => { if (viewMonth === 0) { viewMonth = 11; viewYear--; } else viewMonth--; renderCalendar(); renderAgenda(); });
-  document.getElementById("next-month")?.addEventListener("click", () => { if (viewMonth === 11) { viewMonth = 0; viewYear++; } else viewMonth++; renderCalendar(); renderAgenda(); });
-  document.getElementById("today-btn")?.addEventListener("click", () => { const n=new Date(); viewYear=n.getFullYear(); viewMonth=n.getMonth(); selectedDate=todayStr; renderCalendar(); renderAgenda(); });
-  document.getElementById("prev-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()-1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); });
-  document.getElementById("next-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()+1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); });
+  document.getElementById("prev-month")?.addEventListener("click", () => { if (viewMonth === 0) { viewMonth = 11; viewYear--; } else viewMonth--; renderCalendar(); renderAgenda(); renderMusings(); });
+  document.getElementById("next-month")?.addEventListener("click", () => { if (viewMonth === 11) { viewMonth = 0; viewYear++; } else viewMonth++; renderCalendar(); renderAgenda(); renderMusings(); });
+  document.getElementById("today-btn")?.addEventListener("click", () => { const n=new Date(); viewYear=n.getFullYear(); viewMonth=n.getMonth(); selectedDate=todayStr; renderCalendar(); renderAgenda(); renderMusings(); });
+  document.getElementById("prev-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()-1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); renderMusings(); });
+  document.getElementById("next-day")?.addEventListener("click", () => { const {y,m,d}=parseDate(selectedDate); const c=new Date(y,m,d); c.setDate(c.getDate()+1); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate()); if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); } renderCalendar(); renderAgenda(); renderMusings(); });
 
   document.addEventListener("keydown", (e) => {
     if (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
@@ -1511,7 +1524,7 @@ function baseColor(cat: string): string {
     else return;
     e.preventDefault(); selectedDate=dateKey(c.getFullYear(),c.getMonth(),c.getDate());
     if (c.getFullYear()!==viewYear||c.getMonth()!==viewMonth) { viewYear=c.getFullYear(); viewMonth=c.getMonth(); }
-    renderCalendar(); renderAgenda();
+    renderCalendar(); renderAgenda(); renderMusings();
   });
 
   // ---------------------------------------------------------------------------
@@ -1527,7 +1540,7 @@ function baseColor(cat: string): string {
 
   setInterval(() => {
     const now = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-    if (now !== lastDay) { lastDay = now; todayStr = now; if (selectedDate && selectedDate !== todayStr) { const np = new Date(); if (np.getFullYear() !== viewYear || np.getMonth() !== viewMonth) { viewYear = np.getFullYear(); viewMonth = np.getMonth(); } selectedDate = todayStr; renderCalendar(); renderAgenda(); } }
+    if (now !== lastDay) { lastDay = now; todayStr = now; if (selectedDate && selectedDate !== todayStr) { const np = new Date(); if (np.getFullYear() !== viewYear || np.getMonth() !== viewMonth) { viewYear = np.getFullYear(); viewMonth = np.getMonth(); } selectedDate = todayStr; renderCalendar(); renderAgenda(); renderMusings(); } }
   }, 60000);
 
   refreshFromServer();
