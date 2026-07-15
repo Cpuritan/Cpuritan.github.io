@@ -972,10 +972,26 @@ function baseColor(cat: string): string {
     if (events.length === 0) {
       agendaList.innerHTML = `<li class="agenda-empty">当天暂无日程安排</li>`;
     } else {
+      // Sort by task time, not insertion order. All-day entries (period tasks
+      // with time === "全天" or any text starting with "全天") sort to the top
+      // as a fixed group; everything else by HH:MM numerically. Malformed time
+      // strings fall back to string compare and sink to the bottom of the
+      // timed group. Ties break to entryRank (original insertion order) so
+      // multiple tasks sharing a time stay in a stable order.
+      const allDayOf = (e: ScheduleEntry) =>
+        e.time === "全天" || /^\s*全天/.test(e.time);
+      const timeKey = (e: ScheduleEntry): number => {
+        const t = e.time || "";
+        const m = /^(\d{1,2}):(\d{2})/.exec(t);
+        if (!m) return Number.MAX_SAFE_INTEGER;
+        return Number(m[1]) * 60 + Number(m[2]);
+      };
       const sorted = [...events].sort((a, b) => {
-        const aa = a.time === "全天" ? "" : a.time;
-        const bb = b.time === "全天" ? "" : b.time;
-        if (aa !== bb) return aa.localeCompare(bb);
+        const ad = allDayOf(a), bd = allDayOf(b);
+        if (ad !== bd) return ad ? -1 : 1;          // all-day always on top
+        if (ad && bd) return entryRank(a) - entryRank(b); // both all-day: stable
+        const ka = timeKey(a), kb = timeKey(b);
+        if (ka !== kb) return ka - kb;
         return entryRank(a) - entryRank(b);
       });
 
