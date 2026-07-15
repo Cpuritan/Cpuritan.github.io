@@ -11,7 +11,7 @@ const todayStr = new Intl.DateTimeFormat("en-CA", {
 }).format(today);
 
 const categories = [
-  { key: "research", zh: "科研", h: "215", s: "65" },
+  { key: "research", zh: "科研", h: "210", s: "18" },
   { key: "study",    zh: "学习", h: "270", s: "55" },
   { key: "life",     zh: "生活", h: "145", s: "45" },
   { key: "outing",   zh: "外出", h: "30",  s: "75" },
@@ -546,7 +546,7 @@ function baseColor(cat: string): string {
   function baseHex(cat: string): string {
     const c = CATS.find((x) => x.key === (cat || "other"));
     if (!c) return "#6b7280";
-    const vals: Record<string,string> = { research:"#3b7dd8", study:"#7c4dff", life:"#3ba366", outing:"#e8913a", ddl:"#dc2626", other:"#6b7280" };
+    const vals: Record<string,string> = { research:"#7a93ad", study:"#7c4dff", life:"#3ba366", outing:"#e8913a", ddl:"#dc2626", other:"#6b7280" };
     return vals[c.key] ?? "#6b7280";
   }
 
@@ -647,6 +647,30 @@ function baseColor(cat: string): string {
   }
 
   function entryRank(e: ScheduleEntry): number { return _globalRank.get(e.id || "") ?? 999; }
+
+  /** Shared agenda+calendar sort comparator. Sort key:
+   *    1) all-day entries (time === "全天" or starts with 全天) first as a group;
+   *    2) HH:MM numeric ascending;
+   *    3) malformed time strings sink to the bottom of the timed group;
+   *    4) ties break to entryRank so same-time tasks stay in a stable order.
+   *  Calendar chips and agenda list must use this so their order matches. */
+  function isAllDay(e: ScheduleEntry): boolean {
+    return e.time === "全天" || /^\s*全天/.test(e.time);
+  }
+  function timeKey(e: ScheduleEntry): number {
+    const t = e.time || "";
+    const m = /^(\d{1,2}):(\d{2})/.exec(t);
+    if (!m) return Number.MAX_SAFE_INTEGER;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+  function agendaCmp(a: ScheduleEntry, b: ScheduleEntry): number {
+    const ad = isAllDay(a), bd = isAllDay(b);
+    if (ad !== bd) return ad ? -1 : 1;
+    if (ad && bd) return entryRank(a) - entryRank(b);
+    const ka = timeKey(a), kb = timeKey(b);
+    if (ka !== kb) return ka - kb;
+    return entryRank(a) - entryRank(b);
+  }
 
   // ---------------------------------------------------------------------------
   // State
@@ -868,7 +892,7 @@ function baseColor(cat: string): string {
 
       // Chips: skip period entries — they render as cross-cell .period-band overlays.
       const evts = nonPeriodEventsFor(cellDate);
-      const sorted = [...evts].sort((a, b) => entryRank(a) - entryRank(b));
+      const sorted = [...evts].sort(agendaCmp);
 
       // Reserve slot spacers for visible period bands on this date so that
       // chips naturally sit below the bands. Each period band occupies one
@@ -972,28 +996,7 @@ function baseColor(cat: string): string {
     if (events.length === 0) {
       agendaList.innerHTML = `<li class="agenda-empty">当天暂无日程安排</li>`;
     } else {
-      // Sort by task time, not insertion order. All-day entries (period tasks
-      // with time === "全天" or any text starting with "全天") sort to the top
-      // as a fixed group; everything else by HH:MM numerically. Malformed time
-      // strings fall back to string compare and sink to the bottom of the
-      // timed group. Ties break to entryRank (original insertion order) so
-      // multiple tasks sharing a time stay in a stable order.
-      const allDayOf = (e: ScheduleEntry) =>
-        e.time === "全天" || /^\s*全天/.test(e.time);
-      const timeKey = (e: ScheduleEntry): number => {
-        const t = e.time || "";
-        const m = /^(\d{1,2}):(\d{2})/.exec(t);
-        if (!m) return Number.MAX_SAFE_INTEGER;
-        return Number(m[1]) * 60 + Number(m[2]);
-      };
-      const sorted = [...events].sort((a, b) => {
-        const ad = allDayOf(a), bd = allDayOf(b);
-        if (ad !== bd) return ad ? -1 : 1;          // all-day always on top
-        if (ad && bd) return entryRank(a) - entryRank(b); // both all-day: stable
-        const ka = timeKey(a), kb = timeKey(b);
-        if (ka !== kb) return ka - kb;
-        return entryRank(a) - entryRank(b);
-      });
+      const sorted = [...events].sort(agendaCmp);
 
       const catGroup = new Map<string, ScheduleEntry[]>();
       for (const e of sorted) {
