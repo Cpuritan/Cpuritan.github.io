@@ -8,15 +8,36 @@
       "title": "TRE论文",
       "category": "research",
       "done": 0
+    },
+    {
+      "id": "emrlqf3enuhoz23",
+      "start": "2026-06-26",
+      "end": "2026-06-29",
+      "time": "全天",
+      "title": "参加CSAMSE2026-沈阳",
+      "category": "outing",
+      "done": 0
+    },
+    {
+      "id": "emrlqg90l7ovcu6",
+      "start": "2026-06-24",
+      "end": "2026-06-25",
+      "time": "全天",
+      "title": "准备汇报slide",
+      "category": "research",
+      "done": 0
     }
   ],
   "__done__": {
     "emrhlhgyq4apu7k": 2,
     "emrhquykmccr2jv": 1,
     "emrhlj4saoax4t7": 1,
-    "emrhlgsbsp9bl87_2026-07-12": 2,
     "emrixz5arnn3hiq": 1,
-    "emrhlgsbsp9bl87_2026-07-13": 1
+    "emrk1zj2y4xe27b": 1,
+    "emrk202awe8tdrn": 1,
+    "emrkltz9fpvsyxy": 1,
+    "emrko1qn6ja22pe": 2,
+    "emrko9p9s9l2j3q": 1
   },
   "__musings__": [
     {
@@ -39,6 +60,27 @@
       "text": "敢于改变自己是“自我”觉醒的开始。“意识到”≠“改变”，从0到1是勇气的故事！",
       "date": "2026-07-14",
       "ts": 1784034634467
+    },
+    {
+      "id": "mmrks2m4weugu",
+      "type": "musing",
+      "text": "克制对抗性表达？",
+      "date": "2026-07-14",
+      "ts": 1784041207951
+    },
+    {
+      "id": "mmrlm52s6kd01",
+      "type": "musing",
+      "text": "大成若缺，大巧若拙，大盈若冲",
+      "date": "2026-07-15",
+      "ts": 1784091711318
+    },
+    {
+      "id": "mmrlpyh6c83br",
+      "type": "musing",
+      "text": "学会利用惯性！而不是被惯性操控！",
+      "date": "2026-07-15",
+      "ts": 1784098121844
     }
   ],
   "2026-07-12": [
@@ -67,6 +109,12 @@
       "title": "ESWA截止",
       "category": "ddl",
       "id": "emrhlidsk0t0cq6"
+    },
+    {
+      "time": "3:00",
+      "title": "世界杯决赛！",
+      "category": "life",
+      "id": "emrlqtxcmnw5t3i"
     }
   ],
   "2026-07-13": [
@@ -115,6 +163,66 @@
       "title": "思考人生",
       "category": "other",
       "id": "emrko9p9s9l2j3q"
+    }
+  ],
+  "2026-07-08": [
+    {
+      "time": "10:00",
+      "title": "Melvyn Sim讲座",
+      "category": "study",
+      "id": "emrlqb6mbc045mh"
+    },
+    {
+      "time": "19:00",
+      "title": "Melvyn汇报准备",
+      "category": "study",
+      "id": "emrlqbsezeelb0d"
+    }
+  ],
+  "2026-07-09": [
+    {
+      "time": "10:00",
+      "title": "与Melvyn汇报！",
+      "category": "research",
+      "id": "emrlqcfqw4zgfzg"
+    },
+    {
+      "time": "18:00",
+      "title": "聚餐",
+      "category": "life",
+      "id": "emrlqd7755anprx"
+    }
+  ],
+  "2026-06-28": [
+    {
+      "time": "10:00",
+      "title": "周明龙report",
+      "category": "study",
+      "id": "emrlqh1vr80w23j"
+    }
+  ],
+  "2026-06-17": [
+    {
+      "time": "16:00",
+      "title": "聚餐",
+      "category": "life",
+      "id": "emrlqls25rqahhb"
+    }
+  ],
+  "2026-06-02": [
+    {
+      "time": "10:00",
+      "title": "吕国栋 讲座",
+      "category": "research",
+      "id": "emrlqmequ9rivwb"
+    }
+  ],
+  "2026-06-04": [
+    {
+      "time": "9:00",
+      "title": "data-driven uncertainty set",
+      "category": "study",
+      "id": "emrlqn98kr71xib"
     }
   ]
 }
