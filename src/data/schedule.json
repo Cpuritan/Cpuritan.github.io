@@ -81,6 +81,20 @@
       "text": "学会利用惯性！而不是被惯性操控！",
       "date": "2026-07-15",
       "ts": 1784098121844
+    },
+    {
+      "id": "mmrm4z6jxkd02",
+      "type": "musing",
+      "text": "No Wishful Thinking",
+      "date": "2026-07-15",
+      "ts": 1784123348973
+    },
+    {
+      "id": "mmsb8i5dbq31e",
+      "type": "musing",
+      "text": "当个理想主义者！而不是空想主义者！",
+      "date": "2026-08-02",
+      "ts": 1785640927151
     }
   ],
   "2026-07-12": [
@@ -131,6 +145,12 @@
       "title": "申博截止",
       "category": "ddl",
       "id": "emrk1ykv6oz1i65"
+    },
+    {
+      "time": "16:00",
+      "title": "与jh导师汇报进展",
+      "category": "other",
+      "id": "ems4eydvf3hoa8t"
     }
   ],
   "2026-07-14": [
@@ -223,6 +243,54 @@
       "title": "data-driven uncertainty set",
       "category": "study",
       "id": "emrlqn98kr71xib"
+    }
+  ],
+  "2026-07-01": [
+    {
+      "time": "10:00",
+      "title": "申博系统注册",
+      "category": "other",
+      "id": "emrlrhxh7e37n11"
+    }
+  ],
+  "2026-07-16": [
+    {
+      "time": "21:00",
+      "title": "介绍信模板",
+      "category": "other",
+      "id": "emrn8a0e1e5w154"
+    }
+  ],
+  "2026-07-22": [
+    {
+      "time": "10:00",
+      "title": "TRE完成！",
+      "category": "ddl",
+      "id": "emrokdqe7heu6t9"
+    }
+  ],
+  "2026-07-25": [
+    {
+      "time": "10:00",
+      "title": "港口拖轮流量预测",
+      "category": "study",
+      "id": "ems4f0mb80na7oe"
+    }
+  ],
+  "2026-08-15": [
+    {
+      "time": "10:00",
+      "title": "eswa截止",
+      "category": "ddl",
+      "id": "emsb8inwsk20ht7"
+    }
+  ],
+  "2026-07-30": [
+    {
+      "time": "15:00",
+      "title": "master card",
+      "category": "other",
+      "id": "emsb8jqbvp9sf1i"
     }
   ]
 }
