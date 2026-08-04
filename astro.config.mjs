@@ -13,6 +13,9 @@ export default defineConfig({
     rehypePlugins: [rehypeRaw, rehypeMathjax],
     remarkRehype: {
       allowDangerousHtml: true
+    },
+    shikiConfig: {
+      theme: "github-light"
     }
   },
   vite: {

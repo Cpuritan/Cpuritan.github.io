@@ -163,6 +163,148 @@ h1 {
   height: auto;
 }
 
+/* ---------- 表格 ---------- */
+
+.post-content table {
+  width: 100%;
+  margin: 1.4rem 0;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.post-content th,
+.post-content td {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.post-content thead th {
+  background: #f5f5f4;
+  font-weight: 600;
+  border-bottom: 2px solid #c9c9c9;
+}
+
+.post-content tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.post-content tbody tr:hover {
+  background: #f0f4f8;
+}
+
+/* ---------- 代码块 ---------- */
+
 .post-content pre {
   overflow-x: auto;
+  margin: 1.3rem 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  line-height: 1.55;
+  font-size: 0.86rem;
+}
+
+.post-content pre code,
+.post-content code {
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    "SF Mono",
+    Menlo,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+}
+
+.post-content pre code {
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+}
+
+/* 行内代码 */
+
+.post-content :not(pre) > code {
+  background: #f2f2f0;
+  border: 1px solid #e3e3e0;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Mermaid 流程图 ---------- */
+
+.post-content .mermaid {
+  margin: 1.4rem 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.post-content .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- 数学公式（构建期已由 rehype-mathjax 渲染为 SVG） ---------- */
+
+/* SSR 输出的公式不带 MathJax 浏览器端样式表，这里补齐容器规则：
+   行内公式随文排布，行间公式独占一行并居中。 */
+.post-content mjx-container {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.post-content mjx-container[display="true"] {
+  display: block;
+  margin: 1.1rem 0;
+  padding: 0.15rem 0;
+  text-align: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.post-content mjx-container[display="true"] > svg {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 行间公式的 SVG 保持自然尺寸，超出栏宽时由容器横向滚动，
+   而不是被通用 svg 规则压缩变形（长公式在手机端也能完整查看）。
+   行内公式不覆盖：极端情况下允许随段落宽度等比缩小，避免撑破页面。 */
+.post-content mjx-container[display="true"] > svg {
+  max-width: none;
+}
+
+/* ---------- 引用块（> 引述文字） ---------- */
+
+.post-content blockquote {
+  margin: 1.3rem 0;
+  padding: 0.75rem 1.1rem;
+  border-left: 3px solid #b9b9b9;
+  border-radius: 0 6px 6px 0;
+  background: #f7f7f5;
+  color: #444444;
+}
+
+.post-content blockquote p {
+  margin: 0.5rem 0;
+}
+
+.post-content blockquote > :first-child {
+  margin-top: 0;
+}
+
+.post-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.post-content blockquote blockquote {
+  margin: 0.6rem 0;
+  background: #f0efec;
 }

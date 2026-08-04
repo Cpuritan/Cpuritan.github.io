@@ -19,24 +19,10 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <script is:inline>
-      window.MathJax = {
-        tex: {
-          inlineMath: [["\\(", "\\)"], ["$", "$"]],
-          displayMath: [["\\[", "\\]"], ["$$", "$$"]],
-          processEscapes: true,
-          processEnvironments: true,
-          packages: { "[+]": ["ams", "noerrors", "noundefined"] }
-        },
-        options: {
-          skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-        }
-      };
-    </script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-    ></script>
+    <!--
+      数学公式由构建期的 rehype-mathjax 直接渲染为 SVG（见 astro.config.mjs），
+      任何浏览器都能正常显示，无需再在客户端加载 MathJax。
+    -->
   </head>
   <body>
     <header class="site-header">
@@ -67,5 +53,34 @@ const {
     <main class="page-shell">
       <slot />
     </main>
+    <script>
+      // Astro 的 Shiki 高亮先于自定义 rehype 插件执行，且会给代码块加上
+      // data-language 属性，所以在浏览器端据此找出 mermaid 代码块，
+      // 替换为 <div class="mermaid"> 后用 mermaid.js 渲染成图。
+      const mermaidPres = document.querySelectorAll(
+        'pre[data-language="mermaid"]'
+      );
+      if (mermaidPres.length > 0) {
+        const mermaidDivs = Array.from(mermaidPres).map((pre) => {
+          const div = document.createElement("div");
+          div.className = "mermaid";
+          div.textContent = pre.textContent ?? "";
+          pre.replaceWith(div);
+          return div;
+        });
+        import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs")
+          .then(({ default: mermaid }) => {
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: "neutral",
+              flowchart: { useMaxWidth: true, htmlLabels: true }
+            });
+            return mermaid.run({ nodes: mermaidDivs });
+          })
+          .catch((error) => {
+            console.error("Mermaid 渲染失败:", error);
+          });
+      }
+    </script>
   </body>
 </html>
