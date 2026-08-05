@@ -1,5 +1,5 @@
 ---
-title: A and B
+title: A&B
 date: 2026-01-31 00:00:00 +0800
 ---
 
