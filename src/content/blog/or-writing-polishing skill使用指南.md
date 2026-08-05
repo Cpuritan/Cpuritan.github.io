@@ -1,6 +1,6 @@
 ---
 title: or-writing-polishing skill使用指南
-date: 2026-08-04 17:13:00 +0800
+date: 2026-07-30 17:13:00 +0800
 ---
 > 一句话：**专门帮你写、改、打磨"运筹学（OR）论文"的私人写作教练**，目标期刊是 TRE、EJOR、COR、OMEGA、Transportation Science、INFORMS 这类运筹/管理科学期刊。
 
