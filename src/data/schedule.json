@@ -37,7 +37,11 @@
     "emrk202awe8tdrn": 1,
     "emrkltz9fpvsyxy": 1,
     "emrko1qn6ja22pe": 2,
-    "emrko9p9s9l2j3q": 1
+    "emrko9p9s9l2j3q": 1,
+    "emsenb6ub7yk0hp": 2,
+    "emsb8jqbvp9sf1i": 2,
+    "ems4eydvf3hoa8t": 2,
+    "emrk1ykv6oz1i65": 2
   },
   "__musings__": [
     {
@@ -95,6 +99,20 @@
       "text": "当个理想主义者！而不是空想主义者！",
       "date": "2026-08-02",
       "ts": 1785640927151
+    },
+    {
+      "id": "mmsew1lg75aaa",
+      "type": "musing",
+      "text": "极简主义！是精简，是一种更专注的人生态度，是一个不内耗的人生态度！",
+      "date": "2026-08-05",
+      "ts": 1785861864151
+    },
+    {
+      "id": "mmsffwuca0os5",
+      "type": "musing",
+      "text": "grill-me真好用啊！最爱的skill",
+      "date": "2026-08-05",
+      "ts": 1785895234714
     }
   ],
   "2026-07-12": [
@@ -291,6 +309,28 @@
       "title": "master card",
       "category": "other",
       "id": "emsb8jqbvp9sf1i"
+    }
+  ],
+  "2026-08-04": [
+    {
+      "time": "12:00",
+      "title": "拆机扩容内存",
+      "category": "other",
+      "id": "emsenb6ub7yk0hp"
+    },
+    {
+      "time": "18:00",
+      "title": "确定自洽收敛的实验方案",
+      "category": "research",
+      "id": "emsenbtfwz462yv"
+    }
+  ],
+  "2026-08-05": [
+    {
+      "time": "11:00",
+      "title": "完成自洽收敛的修订实验",
+      "category": "research",
+      "id": "emsffxf07zfzfm3"
     }
   ]
 }
