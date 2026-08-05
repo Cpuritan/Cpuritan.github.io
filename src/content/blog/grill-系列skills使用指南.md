@@ -109,3 +109,5 @@ Q3：惩罚系数怎么定？（这正是你刚才留的尾巴——它会追着
 
 > **grill 系列 = 建模/写码前的"需求拷问官"。**
 > 它用"一次一问 + 推荐答案"的方式，顺着决策树把你方案里每个模糊点都问清楚，**你确认共识之前它绝不动手**。运筹新手只需记住：建模前先 `/grill-me`，把"想当然"提前挖出来。
+
+refer to: [mattpocock/skills: Skills for Real Engineers. Straight from my .agents directory.](https://github.com/mattpocock/skills)
