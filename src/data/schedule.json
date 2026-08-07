@@ -26,6 +26,16 @@
       "title": "准备汇报slide",
       "category": "research",
       "done": 0
+    },
+    {
+      "id": "emsj1vobsrcz40m",
+      "start": "2026-08-07",
+      "end": "2026-08-09",
+      "time": "22:00",
+      "title": "response letter",
+      "category": "research",
+      "color": "#00ffff",
+      "done": 0
     }
   ],
   "__done__": {
