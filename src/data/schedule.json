@@ -26,6 +26,16 @@
       "title": "准备汇报slide",
       "category": "research",
       "done": 0
+    },
+    {
+      "id": "emsj1yvie8a41ak",
+      "start": "2026-08-07",
+      "end": "2026-08-09",
+      "time": "全天",
+      "title": "response letter",
+      "category": "research",
+      "color": "#00ffff",
+      "done": 0
     }
   ],
   "__done__": {
@@ -41,7 +51,9 @@
     "emsenb6ub7yk0hp": 2,
     "emsb8jqbvp9sf1i": 2,
     "ems4eydvf3hoa8t": 2,
-    "emrk1ykv6oz1i65": 2
+    "emrk1ykv6oz1i65": 2,
+    "emsioa75o9eadbn": 2,
+    "emsiob39w8mbzzq": 2
   },
   "__musings__": [
     {
@@ -113,6 +125,13 @@
       "text": "grill-me真好用啊！最爱的skill",
       "date": "2026-08-05",
       "ts": 1785895234714
+    },
+    {
+      "id": "mmsiya31tkkpo",
+      "type": "musing",
+      "text": "要锻炼大脑的注意力机制！多巴胺？皮质醇？《心流》！",
+      "date": "2026-08-07",
+      "ts": 1786107484145
     }
   ],
   "2026-07-12": [
@@ -331,6 +350,28 @@
       "title": "完成自洽收敛的修订实验",
       "category": "research",
       "id": "emsffxf07zfzfm3"
+    }
+  ],
+  "2026-08-07": [
+    {
+      "time": "10:00",
+      "title": "融合知识库+grill的新skills开发",
+      "category": "other",
+      "id": "emsioa75o9eadbn"
+    },
+    {
+      "time": "11:00",
+      "title": "or-writing的fork更新",
+      "category": "other",
+      "id": "emsiob39w8mbzzq"
+    }
+  ],
+  "2026-08-11": [
+    {
+      "time": "8:00",
+      "title": "组会",
+      "category": "research",
+      "id": "emslf34udyj8l4n"
     }
   ]
 }
