@@ -50,7 +50,7 @@ Codex → cc-switch(:15721) → 本地代理(:8787) → api.kimi.com/coding/v1
 2. cc-switch 中把 Kimi For Coding 的 `base_url` 改为 `http://127.0.0.1:8787`
 3. 重启 cc-switch，正常使用
 
-代理已实测：`$ref` 全部展开、`Authorization` 透传、SSE 流式逐段转发均正常。代码与完整文档见 [github.com/Cpuritan/kimi-schema-fix](https://github.com/Cpuritan/kimi-schema-fix)。
+代理已实测：`$ref` 全部展开、`Authorization` 透传、SSE 流式逐段转发均正常。代码与完整文档见 [github.com/Cpuritan/codex-kimi-schema-fix](https://github.com/Cpuritan/codex-kimi-schema-fix)。
 
 ---
 
