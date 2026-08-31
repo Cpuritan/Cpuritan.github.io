@@ -30,7 +30,7 @@
     {
       "id": "emsj1yvie8a41ak",
       "start": "2026-08-07",
-      "end": "2026-08-09",
+      "end": "2026-08-11",
       "time": "全天",
       "title": "response letter",
       "category": "research",
@@ -53,7 +53,15 @@
     "ems4eydvf3hoa8t": 2,
     "emrk1ykv6oz1i65": 2,
     "emsioa75o9eadbn": 2,
-    "emsiob39w8mbzzq": 2
+    "emsiob39w8mbzzq": 2,
+    "emsenbtfwz462yv": 2,
+    "emsffxf07zfzfm3": 1,
+    "ems4f0mb80na7oe": 1,
+    "emrokdqe7heu6t9": 1,
+    "emspi6645tkqqon": 2,
+    "emsr9qiyzmajhfx": 2,
+    "emsb8inwsk20ht7": 2,
+    "emslf34udyj8l4n": 2
   },
   "__musings__": [
     {
@@ -132,6 +140,27 @@
       "text": "要锻炼大脑的注意力机制！多巴胺？皮质醇？《心流》！",
       "date": "2026-08-07",
       "ts": 1786107484145
+    },
+    {
+      "id": "mmsvu82yoi5sw",
+      "type": "inspiration",
+      "text": "fenchel-young learn Omega",
+      "date": "2026-08-16",
+      "ts": 1786886732544
+    },
+    {
+      "id": "mmtcj7yurwxbq",
+      "type": "musing",
+      "text": "太紧张了，嘴在前面跑，脑子在后面追~",
+      "date": "2026-08-24",
+      "ts": 1787896176435
+    },
+    {
+      "id": "mmtcj8tws8koq",
+      "type": "musing",
+      "text": "复盘后，感觉我说的话毫无逻辑。。。",
+      "date": "2026-08-24",
+      "ts": 1787896216684
     }
   ],
   "2026-07-12": [
@@ -372,6 +401,44 @@
       "title": "组会",
       "category": "research",
       "id": "emslf34udyj8l4n"
+    }
+  ],
+  "2026-08-13": [
+    {
+      "time": "15:00",
+      "title": "组会(2)讨论",
+      "category": "research",
+      "id": "emspi6645tkqqon"
+    }
+  ],
+  "2026-08-14": [
+    {
+      "time": "10:00",
+      "title": "讨论？",
+      "category": "research",
+      "id": "emsr9qiyzmajhfx"
+    }
+  ],
+  "2026-08-18": [
+    {
+      "time": "10:00",
+      "title": "组会-FY",
+      "category": "study",
+      "id": "emsvu8lddgwhk86"
+    }
+  ],
+  "2026-08-17": [
+    {
+      "time": "10:00",
+      "title": "FY-INTRO",
+      "category": "research",
+      "id": "emsvu9p4x2akluk"
+    },
+    {
+      "time": "15:00",
+      "title": "FY-IDEA-OMEGA",
+      "category": "research",
+      "id": "emsvua2voswgase"
     }
   ]
 }
