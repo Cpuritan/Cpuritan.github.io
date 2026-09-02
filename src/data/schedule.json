@@ -36,6 +36,15 @@
       "category": "research",
       "color": "#00ffff",
       "done": 0
+    },
+    {
+      "id": "emtjp9y6cmgxnwn",
+      "start": "2026-09-02",
+      "end": "2026-09-03",
+      "time": "全天",
+      "title": "LR&reposition-trb",
+      "category": "research",
+      "done": 0
     }
   ],
   "__done__": {
