@@ -16,37 +16,15 @@ class MemoryKv {
   }
 }
 
-const kimiResponse = {
-  usage: { remaining: "84", resetTime: "2026-09-08T08:00:00Z" },
-  limits: [{
-    window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" },
-    detail: { remaining: "96", resetTime: "2026-09-05T13:00:00Z" },
-  }],
-};
+test("GET /api/quotas returns stored quota snapshots", async () => {
+  const kv = new MemoryKv();
+  await kv.put("quota:kimi", JSON.stringify({ capturedAt: "2026-09-05T12:00:00Z", accounts: [] }));
+  const response = await worker.fetch(new Request("https://example.com/api/quotas"), { QUOTA_USAGE: kv });
+  const body = await response.json();
 
-test("GET /api/quotas returns sanitized Kimi quota data", async () => {
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(JSON.stringify(kimiResponse), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
-
-  try {
-    const response = await worker.fetch(new Request("https://example.com/api/quotas"), {
-      QUOTA_USAGE: new MemoryKv(),
-      KIMI_BOB_API_KEY: "bob-secret",
-      KIMI_MARY_API_KEY: "mary-secret",
-    });
-    const body = await response.json();
-
-    assert.equal(response.status, 200);
-    assert.equal(body.kimi.accounts.length, 2);
-    assert.equal(body.kimi.accounts[0].fiveHour.remainingPercent, 96);
-    assert.equal(body.kimi.accounts[0].weekly.remainingPercent, 84);
-    assert.equal(JSON.stringify(body).includes("secret"), false);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  assert.equal(response.status, 200);
+  assert.equal(body.kimi.capturedAt, "2026-09-05T12:00:00Z");
+  assert.equal(body.codex, null);
 });
 
 test("POST /api/quotas/codex requires the push token", async () => {
@@ -87,4 +65,40 @@ test("POST /api/quotas/codex stores a sanitized snapshot", async () => {
     fiveHour: { remainingPercent: 40, resetsAt: "2026-09-05T14:00:00.000Z" },
     weekly: { remainingPercent: 75, resetsAt: "2026-09-08T14:00:00.000Z" },
   });
+});
+
+test("POST /api/quotas/kimi stores only the two public account snapshots", async () => {
+  const kv = new MemoryKv();
+  const payload = {
+    capturedAt: "2026-09-05T12:00:00Z",
+    accounts: [
+      {
+        name: "Kimi-Bob",
+        privateField: "discarded",
+        fiveHour: { remainingPercent: 96, resetsAt: "2026-09-05T13:00:00Z" },
+        weekly: { remainingPercent: 84, resetsAt: "2026-09-08T08:00:00Z" },
+      },
+      {
+        name: "Kimi-Mary",
+        fiveHour: { remainingPercent: 91, resetsAt: "2026-09-05T14:00:00Z" },
+        weekly: { remainingPercent: 72, resetsAt: "2026-09-09T08:00:00Z" },
+      },
+    ],
+  };
+  const response = await worker.fetch(new Request("https://example.com/api/quotas/kimi", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer push-secret",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }), {
+    QUOTA_USAGE: kv,
+    QUOTA_PUSH_TOKEN: "push-secret",
+  });
+
+  const stored = kv.values.get("quota:kimi");
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(stored).accounts.length, 2);
+  assert.equal(stored.includes("privateField"), false);
 });

@@ -24,8 +24,6 @@ const QUOTA_KEYS = {
   kimi: "quota:kimi",
 };
 
-const KIMI_CACHE_MS = 60_000;
-
 function normalizeQuota(value) {
   const remainingPercent = Number(value?.remainingPercent);
   const resetsAt = new Date(value?.resetsAt);
@@ -45,68 +43,35 @@ function normalizeCodexSnapshot(value) {
   };
 }
 
+function normalizeKimiSnapshot(value) {
+  const capturedAt = new Date(value?.capturedAt);
+  if (Number.isNaN(capturedAt.getTime()) || !Array.isArray(value?.accounts)) {
+    throw new Error("Invalid quota payload");
+  }
+
+  const accounts = ["Kimi-Bob", "Kimi-Mary"].map((name) => {
+    const account = value.accounts.find((item) => item?.name === name);
+    if (!account) throw new Error("Invalid quota payload");
+    return {
+      name,
+      available: true,
+      fiveHour: normalizeQuota(account.fiveHour),
+      weekly: normalizeQuota(account.weekly),
+    };
+  });
+
+  return { capturedAt: capturedAt.toISOString(), accounts };
+}
+
 async function readQuota(env, key) {
   if (!env.QUOTA_USAGE) return null;
   return env.QUOTA_USAGE.get(key, { type: "json" });
 }
 
-async function fetchKimiAccount(name, apiKey) {
-  if (!apiKey) return { name, available: false };
-
-  try {
-    const response = await fetch("https://api.kimi.com/coding/v1/usages", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!response.ok) return { name, available: false };
-
-    const data = await response.json();
-    const fiveHour = data.limits?.find((limit) => (
-      limit.window?.duration === 300 && limit.window?.timeUnit === "TIME_UNIT_MINUTE"
-    ));
-    if (!fiveHour?.detail || !data.usage) return { name, available: false };
-
-    return {
-      name,
-      available: true,
-      fiveHour: normalizeQuota({
-        remainingPercent: fiveHour.detail.remaining,
-        resetsAt: fiveHour.detail.resetTime,
-      }),
-      weekly: normalizeQuota({
-        remainingPercent: data.usage.remaining,
-        resetsAt: data.usage.resetTime,
-      }),
-    };
-  } catch {
-    return { name, available: false };
-  }
-}
-
-async function getKimiSnapshot(env) {
-  const cached = await readQuota(env, QUOTA_KEYS.kimi);
-  if (cached && Date.now() - Date.parse(cached.capturedAt) < KIMI_CACHE_MS) return cached;
-
-  const accounts = await Promise.all([
-    fetchKimiAccount("Kimi-Bob", env.KIMI_BOB_API_KEY),
-    fetchKimiAccount("Kimi-Mary", env.KIMI_MARY_API_KEY),
-  ]);
-
-  if (!accounts.some((account) => account.available)) {
-    if (cached) return { ...cached, stale: true };
-    throw new Error("Kimi quota unavailable");
-  }
-
-  const snapshot = { capturedAt: new Date().toISOString(), accounts };
-  if (env.QUOTA_USAGE) {
-    await env.QUOTA_USAGE.put(QUOTA_KEYS.kimi, JSON.stringify(snapshot), { expirationTtl: 300 });
-  }
-  return snapshot;
-}
-
 async function getQuotaSnapshot(env) {
   const [codex, kimi] = await Promise.all([
     readQuota(env, QUOTA_KEYS.codex),
-    getKimiSnapshot(env),
+    readQuota(env, QUOTA_KEYS.kimi),
   ]);
   return { capturedAt: new Date().toISOString(), codex, kimi };
 }
@@ -119,6 +84,17 @@ async function saveCodexSnapshot(req, env) {
 
   const snapshot = normalizeCodexSnapshot(await req.json());
   await env.QUOTA_USAGE.put(QUOTA_KEYS.codex, JSON.stringify(snapshot));
+  return jsonResponse({ success: true, capturedAt: snapshot.capturedAt });
+}
+
+async function saveKimiSnapshot(req, env) {
+  if (!env.QUOTA_USAGE) return jsonResponse({ error: "Worker missing QUOTA_USAGE binding" }, 503);
+  if (!env.QUOTA_PUSH_TOKEN || req.headers.get("Authorization") !== `Bearer ${env.QUOTA_PUSH_TOKEN}`) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  const snapshot = normalizeKimiSnapshot(await req.json());
+  await env.QUOTA_USAGE.put(QUOTA_KEYS.kimi, JSON.stringify(snapshot));
   return jsonResponse({ success: true, capturedAt: snapshot.capturedAt });
 }
 
@@ -183,6 +159,10 @@ export default {
 
       if (url.pathname === "/api/quotas/codex" && req.method === "POST") {
         return saveCodexSnapshot(req, env);
+      }
+
+      if (url.pathname === "/api/quotas/kimi" && req.method === "POST") {
+        return saveKimiSnapshot(req, env);
       }
 
       if (!env.GH_TOKEN) return jsonResponse({ error: "Worker missing GH_TOKEN secret" }, 500);

@@ -88,14 +88,16 @@ const { Content } = await render(entry);
       const snapshot = await response.json();
       document.querySelectorAll("[data-quota-card]").forEach((card) => {
         if (card.dataset.provider === "codex") {
-          updateCard(card, snapshot.codex, "15 min");
+          const codexAge = Date.now() - Date.parse(snapshot.codex?.capturedAt);
+          updateCard(card, snapshot.codex, codexAge <= 20 * 60_000 ? "15 min" : "stale");
           return;
         }
 
         const account = snapshot.kimi?.accounts?.find((item) => (
           item.available && item.name === card.dataset.account
         ));
-        updateCard(card, account ? { ...account, capturedAt: snapshot.kimi.capturedAt } : null, snapshot.kimi?.stale ? "stale" : "live");
+        const kimiAge = Date.now() - Date.parse(snapshot.kimi?.capturedAt);
+        updateCard(card, account ? { ...account, capturedAt: snapshot.kimi.capturedAt } : null, kimiAge <= 2 * 60_000 ? "live" : "stale");
       });
     } catch {
       // Keep the build-time snapshot when the quota service is unavailable.

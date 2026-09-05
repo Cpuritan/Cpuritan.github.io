@@ -1,26 +1,26 @@
 {
-  "capturedAt": "2026-09-05T11:30:39Z",
+  "capturedAt": "2026-09-05T12:35:32.425Z",
   "accounts": [
     {
       "name": "Kimi-Bob",
       "fiveHour": {
         "remainingPercent": 100,
-        "resetsAt": "2026-09-05T11:49:02.322964Z"
+        "resetsAt": "2026-09-05T16:49:02Z"
       },
       "weekly": {
         "remainingPercent": 94,
-        "resetsAt": "2026-09-08T07:49:02.322964Z"
+        "resetsAt": "2026-09-08T07:49:02Z"
       }
     },
     {
       "name": "Kimi-Mary",
       "fiveHour": {
         "remainingPercent": 100,
-        "resetsAt": "2026-09-05T15:14:05.594349Z"
+        "resetsAt": "2026-09-05T15:14:05Z"
       },
       "weekly": {
         "remainingPercent": 100,
-        "resetsAt": "2026-09-07T06:14:05.594349Z"
+        "resetsAt": "2026-09-07T06:14:05Z"
       }
     }
   ]

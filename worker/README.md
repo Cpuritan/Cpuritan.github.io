@@ -1,8 +1,12 @@
-# Schedule Worker — Cloudflare Worker (deployment README)
+# Schedule and quota Worker — Cloudflare Worker
 
 This Cloudflare Worker proxies reads/writes from the deployed cpuritan.cn
 schedule page to the GitHub Contents API, so that online edits actually
 persist back to the repo (and trigger a GitHub Pages rebuild ~10s later).
+
+It also stores sanitized Codex and Kimi quota snapshots in Workers KV. The
+homepage can read percentages and reset times, while API keys and account IDs
+remain on the local computer.
 
 The GitHub PAT lives **only** in the Worker's encrypted secret store — it
 never appears in the worker bundle, never appears in the browser, and never
@@ -72,6 +76,18 @@ appears in any git-tracked file.
 | GET    | `/api/schedule`       | —                             | returns the JSON of schedule.json |
 | POST   | `/api/schedule/save`  | `{ date, entries }`           | upsert one date |
 | POST   | `/api/schedule/saveAll` | `{ schedule: {...} }`       | bulk replace (preserves unknown keys) |
+| GET    | `/api/quotas`           | —                           | public sanitized quota snapshots |
+| POST   | `/api/quotas/codex`     | Codex quota snapshot        | requires `QUOTA_PUSH_TOKEN` |
+| POST   | `/api/quotas/kimi`      | two Kimi quota snapshots    | requires `QUOTA_PUSH_TOKEN` |
+
+## Local quota sync
+
+- `scripts/watch-kimi-quotas.ps1` keeps one hidden watcher alive and pushes
+  both Kimi accounts once per minute.
+- `scripts/push-codex-quota.ps1` receives already-sanitized Codex percentages
+  and reset times from the local Codex automation, which runs every 15 minutes.
+- `CPURITAN_QUOTA_PUSH_TOKEN` is stored as a Windows user environment variable
+  and as the Worker's encrypted `QUOTA_PUSH_TOKEN` secret.
 
 ## Local development
 

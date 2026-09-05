@@ -2,6 +2,10 @@ name = "cpuritan-schedule"
 main = "index.js"
 compatibility_date = "2025-04-01"
 
+[[kv_namespaces]]
+binding = "QUOTA_USAGE"
+id = "1b34298e26fb42849e67dd77c9933d58"
+
 # The deployed URL will be:
 #   https://cpuritan-schedule.<your-subdomain>.workers.dev
 #
