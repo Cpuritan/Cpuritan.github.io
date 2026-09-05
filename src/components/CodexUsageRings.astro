@@ -1,0 +1,185 @@
+---
+import usage from "../data/codex-usage.json";
+
+const resetFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Shanghai",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false
+});
+
+const updatedFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Shanghai",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false
+});
+
+const quotas = [
+  {
+    label: "5h",
+    usedPercent: usage.fiveHour.usedPercent,
+    resetsAt: usage.fiveHour.resetsAt,
+    color: "#f07c44"
+  },
+  {
+    label: "Weekly",
+    usedPercent: usage.weekly.usedPercent,
+    resetsAt: usage.weekly.resetsAt,
+    color: "#2b6ed3"
+  }
+].map((quota) => ({
+  ...quota,
+  remainingPercent: Math.max(0, Math.min(100, 100 - quota.usedPercent)),
+  resetDate: new Date(quota.resetsAt * 1000)
+}));
+
+const capturedAt = new Date(usage.capturedAt);
+---
+
+<aside class="codex-usage" aria-labelledby="codex-usage-title">
+  <div class="usage-header">
+    <span class="usage-title" id="codex-usage-title">Codex quota</span>
+    <span class="snapshot-badge">snapshot</span>
+  </div>
+
+  <div class="quota-rings">
+    {quotas.map((quota) => {
+      const resetLabel = resetFormatter.format(quota.resetDate);
+      const description = `${quota.label} quota: ${quota.remainingPercent}% remaining; resets ${resetLabel}`;
+
+      return (
+        <div class="quota-item" role="img" aria-label={description} title={description}>
+          <div class="quota-ring" style={`--ring-color: ${quota.color}`}>
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle class="ring-track" cx="32" cy="32" r="26" pathLength="100"></circle>
+              <circle
+                class="ring-value"
+                cx="32"
+                cy="32"
+                r="26"
+                pathLength="100"
+                stroke-dasharray={`${quota.remainingPercent} ${100 - quota.remainingPercent}`}
+              ></circle>
+            </svg>
+            <strong>{quota.remainingPercent}%</strong>
+          </div>
+          <span class="quota-label">{quota.label} left</span>
+          <time datetime={quota.resetDate.toISOString()}>Reset {resetLabel}</time>
+        </div>
+      );
+    })}
+  </div>
+
+  <p class="updated-at">
+    Updated <time datetime={capturedAt.toISOString()}>{updatedFormatter.format(capturedAt)}</time>
+  </p>
+</aside>
+
+<style>
+  .codex-usage {
+    flex: 0 0 13.25rem;
+    width: 13.25rem;
+    max-width: 100%;
+    padding: 1rem 0.9rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .usage-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .usage-title {
+    font-weight: 600;
+  }
+
+  .snapshot-badge {
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  .quota-rings {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+
+  .quota-item {
+    min-width: 0;
+    text-align: center;
+  }
+
+  .quota-ring {
+    position: relative;
+    width: 4.6rem;
+    height: 4.6rem;
+    margin: 0 auto 0.35rem;
+  }
+
+  .quota-ring svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .quota-ring circle {
+    fill: none;
+    stroke-width: 7;
+  }
+
+  .ring-track {
+    stroke: #eeeeec;
+  }
+
+  .ring-value {
+    stroke: var(--ring-color);
+    stroke-linecap: round;
+  }
+
+  .quota-ring strong {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.96rem;
+    line-height: 1;
+  }
+
+  .quota-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .quota-item time,
+  .updated-at {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .quota-item time {
+    display: block;
+    margin-top: 0.08rem;
+    line-height: 1.35;
+  }
+
+  .updated-at {
+    margin: 0.7rem 0 0;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--line);
+    text-align: right;
+  }
+</style>

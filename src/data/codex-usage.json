@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-09-05T09:30:42Z",
+  "fiveHour": {
+    "usedPercent": 72,
+    "resetsAt": 1788601484
+  },
+  "weekly": {
+    "usedPercent": 49,
+    "resetsAt": 1788749353
+  }
+}

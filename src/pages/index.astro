@@ -1,5 +1,6 @@
 ---
 import { getEntry, render } from "astro:content";
+import CodexUsageRings from "../components/CodexUsageRings.astro";
 import ContributionHeatmap from "../components/ContributionHeatmap.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
@@ -15,6 +16,25 @@ const { Content } = await render(entry);
 <BaseLayout title="Home | Cpuritan" description="Qifeng Bao personal homepage">
   <section class="home-intro">
     <Content />
-    <ContributionHeatmap />
+    <div class="home-metrics">
+      <ContributionHeatmap />
+      <CodexUsageRings />
+    </div>
   </section>
 </BaseLayout>
+
+<style>
+  .home-metrics {
+    display: flex;
+    align-items: stretch;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .home-metrics {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
