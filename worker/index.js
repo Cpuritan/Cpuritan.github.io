@@ -8,15 +8,118 @@ const REPO = { owner: "Cpuritan", name: "Cpuritan.github.io", path: "src/data/sc
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Max-Age": "86400",
 };
 
-function jsonResponse(body, status = 200) {
+function jsonResponse(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, "Content-Type": "application/json; charset=utf-8" },
+    headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", ...headers },
   });
+}
+
+const QUOTA_KEYS = {
+  codex: "quota:codex",
+  kimi: "quota:kimi",
+};
+
+const KIMI_CACHE_MS = 60_000;
+
+function normalizeQuota(value) {
+  const remainingPercent = Number(value?.remainingPercent);
+  const resetsAt = new Date(value?.resetsAt);
+  if (!Number.isFinite(remainingPercent) || remainingPercent < 0 || remainingPercent > 100 || Number.isNaN(resetsAt.getTime())) {
+    throw new Error("Invalid quota payload");
+  }
+  return { remainingPercent, resetsAt: resetsAt.toISOString() };
+}
+
+function normalizeCodexSnapshot(value) {
+  const capturedAt = new Date(value?.capturedAt);
+  if (Number.isNaN(capturedAt.getTime())) throw new Error("Invalid quota payload");
+  return {
+    capturedAt: capturedAt.toISOString(),
+    fiveHour: normalizeQuota(value?.fiveHour),
+    weekly: normalizeQuota(value?.weekly),
+  };
+}
+
+async function readQuota(env, key) {
+  if (!env.QUOTA_USAGE) return null;
+  return env.QUOTA_USAGE.get(key, { type: "json" });
+}
+
+async function fetchKimiAccount(name, apiKey) {
+  if (!apiKey) return { name, available: false };
+
+  try {
+    const response = await fetch("https://api.kimi.com/coding/v1/usages", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!response.ok) return { name, available: false };
+
+    const data = await response.json();
+    const fiveHour = data.limits?.find((limit) => (
+      limit.window?.duration === 300 && limit.window?.timeUnit === "TIME_UNIT_MINUTE"
+    ));
+    if (!fiveHour?.detail || !data.usage) return { name, available: false };
+
+    return {
+      name,
+      available: true,
+      fiveHour: normalizeQuota({
+        remainingPercent: fiveHour.detail.remaining,
+        resetsAt: fiveHour.detail.resetTime,
+      }),
+      weekly: normalizeQuota({
+        remainingPercent: data.usage.remaining,
+        resetsAt: data.usage.resetTime,
+      }),
+    };
+  } catch {
+    return { name, available: false };
+  }
+}
+
+async function getKimiSnapshot(env) {
+  const cached = await readQuota(env, QUOTA_KEYS.kimi);
+  if (cached && Date.now() - Date.parse(cached.capturedAt) < KIMI_CACHE_MS) return cached;
+
+  const accounts = await Promise.all([
+    fetchKimiAccount("Kimi-Bob", env.KIMI_BOB_API_KEY),
+    fetchKimiAccount("Kimi-Mary", env.KIMI_MARY_API_KEY),
+  ]);
+
+  if (!accounts.some((account) => account.available)) {
+    if (cached) return { ...cached, stale: true };
+    throw new Error("Kimi quota unavailable");
+  }
+
+  const snapshot = { capturedAt: new Date().toISOString(), accounts };
+  if (env.QUOTA_USAGE) {
+    await env.QUOTA_USAGE.put(QUOTA_KEYS.kimi, JSON.stringify(snapshot), { expirationTtl: 300 });
+  }
+  return snapshot;
+}
+
+async function getQuotaSnapshot(env) {
+  const [codex, kimi] = await Promise.all([
+    readQuota(env, QUOTA_KEYS.codex),
+    getKimiSnapshot(env),
+  ]);
+  return { capturedAt: new Date().toISOString(), codex, kimi };
+}
+
+async function saveCodexSnapshot(req, env) {
+  if (!env.QUOTA_USAGE) return jsonResponse({ error: "Worker missing QUOTA_USAGE binding" }, 503);
+  if (!env.QUOTA_PUSH_TOKEN || req.headers.get("Authorization") !== `Bearer ${env.QUOTA_PUSH_TOKEN}`) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  const snapshot = normalizeCodexSnapshot(await req.json());
+  await env.QUOTA_USAGE.put(QUOTA_KEYS.codex, JSON.stringify(snapshot));
+  return jsonResponse({ success: true, capturedAt: snapshot.capturedAt });
 }
 
 // UTF-8 safe base64 helpers — required because atob/btoa operate on
@@ -70,11 +173,19 @@ export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 
-    if (!env.GH_TOKEN) return jsonResponse({ error: "Worker missing GH_TOKEN secret" }, 500);
-
     const url = new URL(req.url);
     try {
       if (url.pathname === "/api/health") return jsonResponse({ ok: true });
+
+      if (url.pathname === "/api/quotas" && req.method === "GET") {
+        return jsonResponse(await getQuotaSnapshot(env), 200, { "Cache-Control": "no-store" });
+      }
+
+      if (url.pathname === "/api/quotas/codex" && req.method === "POST") {
+        return saveCodexSnapshot(req, env);
+      }
+
+      if (!env.GH_TOKEN) return jsonResponse({ error: "Worker missing GH_TOKEN secret" }, 500);
 
       if (url.pathname === "/api/schedule" && req.method === "GET") {
         const { content } = await ghGet(env.GH_TOKEN, env);

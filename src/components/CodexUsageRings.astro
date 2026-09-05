@@ -41,10 +41,10 @@ const quotas = [
 const capturedAt = new Date(usage.capturedAt);
 ---
 
-<aside class="codex-usage" aria-labelledby="codex-usage-title">
+<aside class="codex-usage" aria-labelledby="codex-usage-title" data-quota-card data-provider="codex">
   <div class="usage-header">
     <span class="usage-title" id="codex-usage-title">Codex quota</span>
-    <span class="snapshot-badge">snapshot</span>
+    <span class="snapshot-badge" data-quota-badge>snapshot</span>
   </div>
 
   <div class="quota-rings">
@@ -53,7 +53,13 @@ const capturedAt = new Date(usage.capturedAt);
       const description = `${quota.label} quota: ${quota.remainingPercent}% remaining; resets ${resetLabel}`;
 
       return (
-        <div class="quota-item" role="img" aria-label={description} title={description}>
+        <div
+          class="quota-item"
+          role="img"
+          aria-label={description}
+          title={description}
+          data-window={quota.label === "5h" ? "fiveHour" : "weekly"}
+        >
           <div class="quota-ring" style={`--ring-color: ${quota.color}`}>
             <svg viewBox="0 0 64 64" aria-hidden="true">
               <circle class="ring-track" cx="32" cy="32" r="26" pathLength="100"></circle>
@@ -64,19 +70,20 @@ const capturedAt = new Date(usage.capturedAt);
                 r="26"
                 pathLength="100"
                 stroke-dasharray={`${quota.remainingPercent} ${100 - quota.remainingPercent}`}
+                data-quota-ring
               ></circle>
             </svg>
-            <strong>{quota.remainingPercent}%</strong>
+            <strong data-quota-percent>{quota.remainingPercent}%</strong>
           </div>
           <span class="quota-label">{quota.label} left</span>
-          <time datetime={quota.resetDate.toISOString()}>Reset {resetLabel}</time>
+          <time datetime={quota.resetDate.toISOString()} data-quota-reset>Reset {resetLabel}</time>
         </div>
       );
     })}
   </div>
 
   <p class="updated-at">
-    Updated <time datetime={capturedAt.toISOString()}>{updatedFormatter.format(capturedAt)}</time>
+    Updated <time datetime={capturedAt.toISOString()} data-quota-updated>{updatedFormatter.format(capturedAt)}</time>
   </p>
 </aside>
 

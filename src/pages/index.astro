@@ -2,6 +2,7 @@
 import { getEntry, render } from "astro:content";
 import CodexUsageRings from "../components/CodexUsageRings.astro";
 import ContributionHeatmap from "../components/ContributionHeatmap.astro";
+import KimiUsageCards from "../components/KimiUsageCards.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const entry = await getEntry("site", "home");
@@ -20,8 +21,93 @@ const { Content } = await render(entry);
       <ContributionHeatmap />
       <CodexUsageRings />
     </div>
+    <KimiUsageCards />
   </section>
 </BaseLayout>
+
+<script>
+  const QUOTA_API_URL = "https://cpuritan-schedule.bqf-cpuritan.workers.dev/api/quotas";
+  const POLL_INTERVAL_MS = 60_000;
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Shanghai",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+  function updateCard(card, source, badgeText) {
+    if (!source) return;
+
+    card.querySelectorAll("[data-window]").forEach((item) => {
+      const windowName = item.dataset.window;
+      const quota = source[windowName];
+      if (!quota) return;
+
+      const remainingPercent = Math.max(0, Math.min(100, Number(quota.remainingPercent)));
+      const resetDate = new Date(quota.resetsAt);
+      if (!Number.isFinite(remainingPercent) || Number.isNaN(resetDate.getTime())) return;
+
+      const resetLabel = dateFormatter.format(resetDate);
+      const label = windowName === "fiveHour" ? "5h" : "Weekly";
+      const account = card.dataset.account ? `${card.dataset.account} ` : "";
+      const description = `${account}${label} quota: ${remainingPercent}% remaining; resets ${resetLabel}`;
+      const ring = item.querySelector("[data-quota-ring]");
+      const percent = item.querySelector("[data-quota-percent]");
+      const reset = item.querySelector("[data-quota-reset]");
+
+      if (ring) ring.setAttribute("stroke-dasharray", `${remainingPercent} ${100 - remainingPercent}`);
+      if (percent) percent.textContent = `${remainingPercent}%`;
+      if (reset) {
+        reset.dateTime = resetDate.toISOString();
+        reset.textContent = `Reset ${resetLabel}`;
+      }
+      item.setAttribute("aria-label", description);
+      item.setAttribute("title", description);
+    });
+
+    const updatedAt = new Date(source.capturedAt);
+    const updated = card.querySelector("[data-quota-updated]");
+    if (updated && !Number.isNaN(updatedAt.getTime())) {
+      updated.dateTime = updatedAt.toISOString();
+      updated.textContent = dateFormatter.format(updatedAt);
+    }
+
+    const badge = card.querySelector("[data-quota-badge]");
+    if (badge) badge.textContent = badgeText;
+  }
+
+  async function refreshQuotas() {
+    if (document.visibilityState === "hidden") return;
+
+    try {
+      const response = await fetch(QUOTA_API_URL, { cache: "no-store", credentials: "omit" });
+      if (!response.ok) return;
+
+      const snapshot = await response.json();
+      document.querySelectorAll("[data-quota-card]").forEach((card) => {
+        if (card.dataset.provider === "codex") {
+          updateCard(card, snapshot.codex, "15 min");
+          return;
+        }
+
+        const account = snapshot.kimi?.accounts?.find((item) => (
+          item.available && item.name === card.dataset.account
+        ));
+        updateCard(card, account ? { ...account, capturedAt: snapshot.kimi.capturedAt } : null, snapshot.kimi?.stale ? "stale" : "live");
+      });
+    } catch {
+      // Keep the build-time snapshot when the quota service is unavailable.
+    }
+  }
+
+  refreshQuotas();
+  window.setInterval(refreshQuotas, POLL_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshQuotas();
+  });
+</script>
 
 <style>
   .home-metrics {
