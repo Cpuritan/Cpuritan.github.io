@@ -1,5 +1,6 @@
 ---
 import { getEntry, render } from "astro:content";
+import ContributionHeatmap from "../components/ContributionHeatmap.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const entry = await getEntry("site", "home");
@@ -14,5 +15,6 @@ const { Content } = await render(entry);
 <BaseLayout title="Home | Cpuritan" description="Qifeng Bao personal homepage">
   <section class="home-intro">
     <Content />
+    <ContributionHeatmap />
   </section>
 </BaseLayout>

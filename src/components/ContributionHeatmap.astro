@@ -1,0 +1,262 @@
+---
+import { getCollection } from "astro:content";
+import { formatDate } from "../utils/date";
+
+const RANGE_DAYS = 180;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const [blogPosts, musings] = await Promise.all([
+  getCollection("blog", ({ data }) => !data.draft),
+  getCollection("musings", ({ data }) => !data.draft)
+]);
+
+const entriesByDate = new Map<string, string[]>();
+
+for (const entry of [...blogPosts, ...musings]) {
+  const date = formatDate(entry.data.date);
+  const titles = entriesByDate.get(date) ?? [];
+  titles.push(entry.data.title);
+  entriesByDate.set(date, titles);
+}
+
+const todayKey = formatDate(new Date());
+const today = new Date(`${todayKey}T00:00:00Z`);
+const startDate = new Date(today.getTime() - (RANGE_DAYS - 1) * DAY_MS);
+const startOffset = (startDate.getUTCDay() + 6) % 7;
+
+const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "long",
+  day: "numeric"
+});
+
+const monthFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
+  month: "short"
+});
+
+const days = Array.from({ length: RANGE_DAYS }, (_, index) => {
+  const date = new Date(startDate.getTime() + index * DAY_MS);
+  const dateKey = date.toISOString().slice(0, 10);
+  const titles = entriesByDate.get(dateKey) ?? [];
+  const count = titles.length;
+
+  return {
+    date,
+    dateKey,
+    count,
+    titles,
+    level: Math.min(count, 4)
+  };
+});
+
+const weekCount = Math.ceil((startOffset + days.length) / 7);
+const monthLabels = days.flatMap((day, index) => {
+  if (index !== 0 && day.date.getUTCDate() !== 1) return [];
+
+  return [{
+    label: monthFormatter.format(day.date),
+    week: Math.floor((startOffset + index) / 7) + 1
+  }];
+});
+
+const totalEntries = days.reduce((sum, day) => sum + day.count, 0);
+---
+
+<figure class="contribution-heatmap">
+  <figcaption>
+    <span class="heatmap-title">创作记录</span>
+    <span class="heatmap-summary">最近 {RANGE_DAYS} 天发布 {totalEntries} 篇</span>
+  </figcaption>
+
+  <div class="heatmap-scroll">
+    <div class="heatmap-chart">
+      <div class="month-labels" style={`--week-count: ${weekCount}`} aria-hidden="true">
+        {monthLabels.map((month) => (
+          <span style={`grid-column: ${month.week}`}>{month.label}</span>
+        ))}
+      </div>
+
+      <div class="weekday-labels" aria-hidden="true">
+        <span></span>
+        <span>Tue</span>
+        <span></span>
+        <span>Thu</span>
+        <span></span>
+        <span>Sat</span>
+        <span></span>
+      </div>
+
+      <div
+        class="heatmap-grid"
+        style={`--week-count: ${weekCount}`}
+        role="grid"
+        aria-label={`最近 ${RANGE_DAYS} 天的创作记录`}
+      >
+        {Array.from({ length: startOffset }, () => (
+          <span class="heatmap-cell is-placeholder" aria-hidden="true"></span>
+        ))}
+        {days.map((day) => {
+          const description = day.count === 0
+            ? `${dateFormatter.format(day.date)}：无发布`
+            : `${dateFormatter.format(day.date)}：发布 ${day.count} 篇，${day.titles.join("、")}`;
+
+          return (
+            <time
+              class={`heatmap-cell level-${day.level}`}
+              datetime={day.dateKey}
+              role="gridcell"
+              aria-label={description}
+              title={description}
+            ></time>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+
+  <div class="heatmap-legend" aria-label="颜色越深表示当天发布的内容越多">
+    <span>少</span>
+    <i class="heatmap-cell level-0"></i>
+    <i class="heatmap-cell level-1"></i>
+    <i class="heatmap-cell level-2"></i>
+    <i class="heatmap-cell level-3"></i>
+    <i class="heatmap-cell level-4"></i>
+    <span>多</span>
+  </div>
+</figure>
+
+<style>
+  .contribution-heatmap {
+    --cell-size: 0.72rem;
+    --cell-gap: 0.23rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: 1.5rem 0 0;
+    padding: 1rem 1.1rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  figcaption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .heatmap-title {
+    font-weight: 600;
+  }
+
+  .heatmap-summary,
+  .heatmap-legend {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .heatmap-scroll {
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .heatmap-chart {
+    display: grid;
+    grid-template-columns: 1.35rem max-content;
+    grid-template-rows: 1rem auto;
+    gap: 0.25rem 0.4rem;
+    width: max-content;
+  }
+
+  .month-labels {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: repeat(var(--week-count), var(--cell-size));
+    column-gap: var(--cell-gap);
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  .month-labels span {
+    white-space: nowrap;
+  }
+
+  .weekday-labels {
+    display: grid;
+    grid-row: 2;
+    grid-template-rows: repeat(7, var(--cell-size));
+    row-gap: var(--cell-gap);
+    color: var(--muted);
+    font-size: 0.66rem;
+    line-height: var(--cell-size);
+    text-align: right;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-column: 2;
+    grid-row: 2;
+    grid-template-rows: repeat(7, var(--cell-size));
+    grid-auto-flow: column;
+    grid-auto-columns: var(--cell-size);
+    gap: var(--cell-gap);
+  }
+
+  .heatmap-cell {
+    display: block;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border: 1px solid rgb(27 31 36 / 6%);
+    border-radius: 2px;
+    background: #eeeeec;
+  }
+
+  .heatmap-cell.level-1 {
+    background: #fdd577;
+  }
+
+  .heatmap-cell.level-2 {
+    background: #faaa53;
+  }
+
+  .heatmap-cell.level-3 {
+    background: #f07c44;
+  }
+
+  .heatmap-cell.level-4 {
+    background: #d94e49;
+  }
+
+  .heatmap-cell.is-placeholder {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-top: 0.6rem;
+  }
+
+  .heatmap-legend .heatmap-cell {
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 480px) {
+    .contribution-heatmap {
+      padding-inline: 0.85rem;
+    }
+
+    figcaption {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+  }
+</style>
