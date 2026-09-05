@@ -7,8 +7,8 @@
   <p>有志矣，不随以止也，然力不足者，亦不能至也。有志与力，而又不随以怠，至于幽暗昏惑而无物以相之，亦不能至也。然力足以至焉，于人为可讥，而在己为有悔；尽吾志也而不能至者，可以无悔矣，其孰能讥之乎？此余之所得也。</p>
 </div>
 
-<p class="font-kaiti">研究领域：供应链管理；收益管理；交通物流；   研究方法：端到端预测优化；鲁棒优化；最优传输；</p>
-
+<p class="font-kaiti">研究领域：供应链管理；收益管理；交通物流；</p>
+<p class="font-kaiti">研究方法：端到端预测优化；鲁棒优化；最优传输；</p>
 
 - GitHub: [github.com/Cpuritan](https://github.com/Cpuritan)
 - Email: [bqf_cpuritan@163.com](mailto:bqf_cpuritan@163.com)
