@@ -6,6 +6,9 @@ compatibility_date = "2025-04-01"
 binding = "QUOTA_USAGE"
 id = "1b34298e26fb42849e67dd77c9933d58"
 
+[triggers]
+crons = ["0 */2 * * *"]
+
 # The deployed URL will be:
 #   https://cpuritan-schedule.<your-subdomain>.workers.dev
 #
@@ -14,6 +17,8 @@ id = "1b34298e26fb42849e67dd77c9933d58"
 
 # Secrets — set these once with:
 #   npx wrangler secret put GH_TOKEN
+#   npx wrangler secret put KIMI_BOB_API_KEY
+#   npx wrangler secret put KIMI_MARY_API_KEY
 # It will prompt for the value. Use a GitHub fine-grained PAT scoped to:
 #   - Repository: Cpuritan/Cpuritan.github.io
 #   - Permissions: Contents: Read and write

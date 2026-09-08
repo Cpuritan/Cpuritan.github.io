@@ -24,6 +24,8 @@ const QUOTA_KEYS = {
   kimi: "quota:kimi",
 };
 
+const KIMI_USAGE_URL = "https://api.kimi.com/coding/v1/usages";
+
 function normalizeQuota(value) {
   const remainingPercent = Number(value?.remainingPercent);
   const resetsAt = new Date(value?.resetsAt);
@@ -98,6 +100,50 @@ async function saveKimiSnapshot(req, env) {
   return jsonResponse({ success: true, capturedAt: snapshot.capturedAt });
 }
 
+async function fetchKimiAccount(name, apiKey) {
+  if (!apiKey) throw new Error(`Worker missing ${name} API key`);
+
+  const response = await fetch(KIMI_USAGE_URL, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "User-Agent": "cpuritan-quota-monitor",
+    },
+  });
+  if (!response.ok) throw new Error(`${name} quota request failed: ${response.status}`);
+
+  const usage = await response.json();
+  const fiveHour = usage?.limits?.find((limit) => (
+    limit?.window?.duration === 300 && limit?.window?.timeUnit === "TIME_UNIT_MINUTE"
+  ));
+  if (!fiveHour?.detail || !usage?.usage) throw new Error(`${name} quota response is incomplete`);
+
+  return {
+    name,
+    fiveHour: {
+      remainingPercent: fiveHour.detail.remaining,
+      resetsAt: fiveHour.detail.resetTime,
+    },
+    weekly: {
+      remainingPercent: usage.usage.remaining,
+      resetsAt: usage.usage.resetTime,
+    },
+  };
+}
+
+async function refreshKimiSnapshot(env) {
+  if (!env.QUOTA_USAGE) throw new Error("Worker missing QUOTA_USAGE binding");
+
+  const accounts = await Promise.all([
+    fetchKimiAccount("Kimi-Bob", env.KIMI_BOB_API_KEY),
+    fetchKimiAccount("Kimi-Mary", env.KIMI_MARY_API_KEY),
+  ]);
+  const snapshot = normalizeKimiSnapshot({
+    capturedAt: new Date().toISOString(),
+    accounts,
+  });
+  await env.QUOTA_USAGE.put(QUOTA_KEYS.kimi, JSON.stringify(snapshot));
+}
+
 // UTF-8 safe base64 helpers — required because atob/btoa operate on
 // Latin-1 and corrupt any non-ASCII characters. The previous implementation
 // round-tripped UTF-8 through Latin-1 twice and turned 中文 -> mojibake.
@@ -146,6 +192,10 @@ async function ghPut(token, env, content, sha, msg) {
 }
 
 export default {
+  async scheduled(_controller, env) {
+    await refreshKimiSnapshot(env);
+  },
+
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
 

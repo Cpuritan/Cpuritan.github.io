@@ -5,8 +5,8 @@ schedule page to the GitHub Contents API, so that online edits actually
 persist back to the repo (and trigger a GitHub Pages rebuild ~10s later).
 
 It also stores sanitized Codex and Kimi quota snapshots in Workers KV. The
-homepage can read percentages and reset times, while API keys and account IDs
-remain on the local computer.
+homepage can read percentages and reset times without receiving API keys or
+account IDs.
 
 The GitHub PAT lives **only** in the Worker's encrypted secret store — it
 never appears in the worker bundle, never appears in the browser, and never
@@ -34,11 +34,13 @@ appears in any git-tracked file.
    npx wrangler login
    ```
 
-4. **Set the GitHub token as a Worker secret**:
+4. **Set the Worker secrets**:
 
    ```bash
    npm run secret:put
    # paste the github_pat_... when prompted
+   npx wrangler secret put KIMI_BOB_API_KEY
+   npx wrangler secret put KIMI_MARY_API_KEY
    ```
 
 5. **Deploy**:
@@ -80,14 +82,17 @@ appears in any git-tracked file.
 | POST   | `/api/quotas/codex`     | Codex quota snapshot        | requires `QUOTA_PUSH_TOKEN` |
 | POST   | `/api/quotas/kimi`      | two Kimi quota snapshots    | requires `QUOTA_PUSH_TOKEN` |
 
-## Local quota sync
+## Quota sync
 
-- `scripts/watch-kimi-quotas.ps1` keeps one hidden watcher alive and pushes
-  both Kimi accounts once per minute.
+- Cloudflare's `0 */2 * * *` Cron Trigger reads both Kimi accounts every two
+  hours. Their API keys live only in Cloudflare's encrypted secret store.
 - `scripts/push-codex-quota.ps1` receives already-sanitized Codex percentages
-  and reset times from the local Codex automation, which runs every 15 minutes.
+  and reset times from the local Codex automation, which runs every two hours
+  while the computer and Codex app are available.
 - `CPURITAN_QUOTA_PUSH_TOKEN` is stored as a Windows user environment variable
   and as the Worker's encrypted `QUOTA_PUSH_TOKEN` secret.
+- `scripts/push-kimi-quotas.ps1` remains available only as a manual fallback;
+  no local Kimi watcher is required after migration.
 
 ## Local development
 

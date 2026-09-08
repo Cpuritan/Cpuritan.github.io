@@ -102,3 +102,46 @@ test("POST /api/quotas/kimi stores only the two public account snapshots", async
   assert.equal(JSON.parse(stored).accounts.length, 2);
   assert.equal(stored.includes("privateField"), false);
 });
+
+test("scheduled refresh fetches and stores both Kimi accounts", async () => {
+  const kv = new MemoryKv();
+  const originalFetch = globalThis.fetch;
+  const requestedTokens = [];
+
+  globalThis.fetch = async (_url, options) => {
+    const token = options.headers.Authorization.replace("Bearer ", "");
+    requestedTokens.push(token);
+    const isBob = token === "bob-secret";
+    return new Response(JSON.stringify({
+      limits: [{
+        window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" },
+        detail: {
+          remaining: isBob ? 0 : 63,
+          resetTime: "2026-09-08T14:00:00Z",
+        },
+      }],
+      usage: {
+        remaining: isBob ? 0 : 71,
+        resetTime: "2026-09-15T00:00:00Z",
+      },
+    }), { headers: { "Content-Type": "application/json" } });
+  };
+
+  try {
+    await worker.scheduled({}, {
+      QUOTA_USAGE: kv,
+      KIMI_BOB_API_KEY: "bob-secret",
+      KIMI_MARY_API_KEY: "mary-secret",
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const storedText = kv.values.get("quota:kimi");
+  const stored = JSON.parse(storedText);
+  assert.deepEqual(requestedTokens, ["bob-secret", "mary-secret"]);
+  assert.deepEqual(stored.accounts.map((account) => account.name), ["Kimi-Bob", "Kimi-Mary"]);
+  assert.equal(stored.accounts[0].fiveHour.remainingPercent, 0);
+  assert.equal(stored.accounts[1].weekly.remainingPercent, 71);
+  assert.equal(storedText.includes("secret"), false);
+});

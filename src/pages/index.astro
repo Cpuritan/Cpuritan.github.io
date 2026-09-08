@@ -28,6 +28,7 @@ const { Content } = await render(entry);
 <script>
   const QUOTA_API_URL = "https://cpuritan-schedule.bqf-cpuritan.workers.dev/api/quotas";
   const POLL_INTERVAL_MS = 60_000;
+  const QUOTA_FRESHNESS_MS = 150 * 60_000;
   const dateFormatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Shanghai",
     month: "short",
@@ -89,7 +90,7 @@ const { Content } = await render(entry);
       document.querySelectorAll("[data-quota-card]").forEach((card) => {
         if (card.dataset.provider === "codex") {
           const codexAge = Date.now() - Date.parse(snapshot.codex?.capturedAt);
-          updateCard(card, snapshot.codex, codexAge <= 20 * 60_000 ? "15 min" : "stale");
+          updateCard(card, snapshot.codex, codexAge <= QUOTA_FRESHNESS_MS ? "2h" : "stale");
           return;
         }
 
@@ -97,7 +98,7 @@ const { Content } = await render(entry);
           item.available && item.name === card.dataset.account
         ));
         const kimiAge = Date.now() - Date.parse(snapshot.kimi?.capturedAt);
-        updateCard(card, account ? { ...account, capturedAt: snapshot.kimi.capturedAt } : null, kimiAge <= 2 * 60_000 ? "live" : "stale");
+        updateCard(card, account ? { ...account, capturedAt: snapshot.kimi.capturedAt } : null, kimiAge <= QUOTA_FRESHNESS_MS ? "2h" : "stale");
       });
     } catch {
       // Keep the build-time snapshot when the quota service is unavailable.
