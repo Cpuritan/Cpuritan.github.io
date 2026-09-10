@@ -193,6 +193,13 @@
       "text": "逻辑的傲慢",
       "date": "2026-09-03",
       "ts": 1788403371174
+    },
+    {
+      "id": "mmtsnga0d6dbf",
+      "type": "musing",
+      "text": "学会改变，敢于改变，习惯改变！",
+      "date": "2026-09-08",
+      "ts": 1788870741421
     }
   ],
   "2026-07-12": [
@@ -511,6 +518,14 @@
       "title": "组会(2)",
       "category": "study",
       "id": "emtsf9csnibmw1t"
+    }
+  ],
+  "2026-09-09": [
+    {
+      "time": "7:00",
+      "title": "早起！早饭！",
+      "category": "life",
+      "id": "emtsngt2y8pcjek"
     }
   ]
 }
