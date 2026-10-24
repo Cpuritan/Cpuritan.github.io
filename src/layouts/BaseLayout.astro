@@ -53,6 +53,11 @@ const {
     <main class="page-shell">
       <slot />
     </main>
+    <footer class="site-footer">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+        皖ICP备2023002135号-1
+      </a>
+    </footer>
     <script>
       // Astro 的 Shiki 高亮先于自定义 rehype 插件执行，且会给代码块加上
       // data-language 属性，所以在浏览器端据此找出 mermaid 代码块，
